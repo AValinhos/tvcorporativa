@@ -272,7 +272,7 @@ export default function Dashboard() {
                         <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
                   ) : (
-                  <Carousel className="w-full max-w-xs">
+                  <Carousel className="w-full max-w-xs" opts={{ loop: true }}>
                     <CarouselContent>
                       {exposureByPlaylist.map((p, index) => (
                         <CarouselItem key={index}>
@@ -343,6 +343,7 @@ export default function Dashboard() {
     </AuthGuard>
   );
 }
+
 
 
 
