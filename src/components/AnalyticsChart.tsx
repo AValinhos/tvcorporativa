@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { subDays, format } from 'date-fns';
+import { subDays, format, parse } from 'date-fns';
 
 interface AnalyticsDataPoint {
   date: string;
@@ -58,19 +58,23 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
             }
         });
     });
-
+    
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
 
-    const filteredData = analyticsData.filter(d => {
-        const recordDate = new Date(`${d.date}T${d.time || '00:00:00'}`);
-        return recordDate >= thirtyDaysAgo && recordDate <= now;
-    }).map(d => ({
-        ...d,
-        fullDate: `${d.date} ${d.time}`,
-        formattedTime: format(new Date(`${d.date}T${d.time || '00:00:00'}`), "dd/MM HH:mm")
-    }));
-    
+    const filteredData = analyticsData
+      .map(d => {
+        // Usa a biblioteca date-fns para parsear a data e hora
+        const recordDate = parse(`${d.date} ${d.time}`, 'yyyy-MM-dd HH:mm:ss', new Date());
+        return {
+          ...d,
+          recordDate, // Mantém o objeto Date para ordenação e filtragem
+          formattedTime: format(recordDate, "dd/MM HH:mm")
+        };
+      })
+      .filter(d => d.recordDate >= thirtyDaysAgo && d.recordDate <= now)
+      .sort((a,b) => a.recordDate.getTime() - b.recordDate.getTime());
+
     const config: ChartConfig = {};
     Array.from(allDeviceKeys).forEach((key, index) => {
         config[key] = {
@@ -123,4 +127,3 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
     </Card>
   );
 }
-
