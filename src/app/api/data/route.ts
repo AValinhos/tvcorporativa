@@ -73,6 +73,12 @@ export async function POST(req: NextRequest) {
         }, { status: 200 });
     }
     
+    if (body.action === 'CLEAR_VISUALIZATION_DATA') {
+        await fs.writeFile(analyticsFilePath, '[]', 'utf-8');
+        await fs.writeFile(exposureFilePath, '{}', 'utf-8');
+        return NextResponse.json({ message: 'Dados de visualização limpos com sucesso.' }, { status: 200 });
+    }
+
     // --- Other actions ---
     if (body.action === 'CREATE_MEDIA') {
       data.mediaItems.push(body.payload);

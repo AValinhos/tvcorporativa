@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import AnalyticsChart from '@/components/AnalyticsChart';
@@ -65,6 +65,8 @@ export default function SettingsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+  const [isClearDataDialogOpen, setIsClearDataDialogOpen] = useState(false);
+  const [isClearingData, setIsClearingData] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [exportType, setExportType] = useState<BackupType>('content');
   const [importType, setImportType] = useState<BackupType>('content');
@@ -214,6 +216,36 @@ export default function SettingsPage() {
       }
   };
 
+    const handleClearVisualizationData = async () => {
+        setIsClearingData(true);
+        try {
+            const response = await fetch('/api/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'CLEAR_VISUALIZATION_DATA' }),
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Falha ao limpar os dados.');
+            }
+            toast({
+                title: 'Sucesso!',
+                description: 'Os dados de visualização foram limpos. A página será recarregada.',
+            });
+            setTimeout(() => window.location.reload(), 2000);
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: error.message,
+            });
+        } finally {
+            setIsClearingData(false);
+            setIsClearDataDialogOpen(false);
+        }
+    };
+
+
   const handleOpenDeviceDialog = (device: Device | null) => {
     setEditingDevice(device);
     setDeviceName(device?.name || '');
@@ -348,7 +380,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
                <Select value={exportType} onValueChange={(v) => setExportType(v as BackupType)}>
-                  <SelectTrigger className="w-[280px]">
+                  <SelectTrigger className="w-full sm:w-[280px]">
                       <SelectValue placeholder="Selecione o tipo de backup" />
                   </SelectTrigger>
                   <SelectContent>
@@ -375,11 +407,11 @@ export default function SettingsPage() {
                 <RadioGroup defaultValue="content" value={importType} onValueChange={(v) => setImportType(v as BackupType)}>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="content" id="r1" />
-                        <Label htmlFor="r1">Conteúdo (Mídias, Playlists, Dispositivos)</Label>
+                        <Label htmlFor="r1">Conteúdo</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="visualization" id="r2" />
-                        <Label htmlFor="r2">Dados de Visualização</Label>
+                        <Label htmlFor="r2">Visualização</Label>
                     </div>
                 </RadioGroup>
               </div>
@@ -396,10 +428,26 @@ export default function SettingsPage() {
           </Card>
         </div>
 
+        <div className="grid gap-6 mb-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Gerenciamento de Dados</CardTitle>
+                    <CardDescription>Ações perigosas relacionadas aos dados da aplicação.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button variant="destructive" onClick={() => setIsClearDataDialogOpen(true)}>
+                        <ShieldX className="mr-2 h-4 w-4" /> Limpar Dados de Visualização
+                    </Button>
+                     <p className="text-sm text-muted-foreground mt-2">
+                        Isso irá apagar permanentemente todos os dados de analytics e de exposição de mídia. Use com cuidado.
+                    </p>
+                </CardContent>
+            </Card>
+        </div>
+
         <div className="grid gap-6">
             <AnalyticsChart />
         </div>
-
 
         <Dialog open={isDeviceDialogOpen} onOpenChange={setIsDeviceDialogOpen}>
             <DialogContent>
@@ -447,6 +495,24 @@ export default function SettingsPage() {
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmImport}>
                         Confirmar Importação
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+         <AlertDialog open={isClearDataDialogOpen} onOpenChange={setIsClearDataDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar Limpeza de Dados?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Todos os dados de analytics e exposição de mídia serão apagados permanentemente. Tem certeza de que deseja continuar?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearVisualizationData} disabled={isClearingData} className="bg-destructive hover:bg-destructive/90">
+                       {isClearingData ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4"/>}
+                       Limpar Dados
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
