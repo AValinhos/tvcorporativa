@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       const newPlaylist = { ...body.payload, id: newId, deviceIds: [] }
       data.playlists.push(newPlaylist);
     } else if (body.action === 'UPDATE_PLAYLIST') {
-        data.playlists = data.playlists.map((p:any) => p.id === body.payload.id ? body.payload.updates : p);
+        data.playlists = data.playlists.map((p:any) => p.id === body.payload.id ? { ...p, ...body.payload.updates } : p);
         analyticsShouldUpdate = true;
     } else if (body.action === 'DELETE_PLAYLIST') {
         data.playlists = data.playlists.filter((p:any) => p.id !== body.payload.id);
