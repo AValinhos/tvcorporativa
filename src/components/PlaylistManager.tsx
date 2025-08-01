@@ -332,8 +332,9 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
 
             {selectedPlaylist && selectedPlaylist.deviceIds && selectedPlaylist.deviceIds.length > 0 && (
                 <Link href={`/display/${selectedPlaylist.deviceIds[0]}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer">
-                    <Button variant="ghost" size="icon">
-                        <PlayCircle className="h-5 w-5 text-primary hover:text-primary/80" />
+                    <Button variant="outline" size="sm">
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Visualizar Playlist
                     </Button>
                 </Link>
             )}
