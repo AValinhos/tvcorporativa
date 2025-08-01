@@ -39,28 +39,38 @@ interface Playlist {
   items: (MediaItem & { duration: number })[];
 }
 
-const getPlaylistById = (id: string, allData: { mediaItems: MediaItem[], playlists: { id: string, name: string, items: PlaylistItemData[] }[] }): Playlist | null => {
-  const playlistData = allData.playlists.find(p => p.id === id);
-  if (!playlistData) return null;
-
-  const items = playlistData.items.map(item => {
-    const media = allData.mediaItems.find(m => m.id === item.mediaId);
-    if (!media) return null;
-    return {
-      ...media,
-      duration: item.duration,
-    }
-  }).filter((item): item is MediaItem & { duration: number } => item !== null);
-
-  return { ...playlistData, items };
+interface Device {
+    id: string;
+    name: string;
+    playlistId: string;
 }
 
-const trackExposure = async (mediaId?: string, mediaIds?: string[]) => {
+const getPlaylistByDeviceId = (deviceId: string, allData: { mediaItems: MediaItem[], playlists: { id: string, name: string, items: PlaylistItemData[] }[], devices: Device[] }): Playlist | null => {
+    const device = allData.devices.find(d => d.id === deviceId);
+    if (!device || !device.playlistId) return null;
+
+    const playlistData = allData.playlists.find(p => p.id === device.playlistId);
+    if (!playlistData) return null;
+
+    const items = playlistData.items.map(item => {
+        const media = allData.mediaItems.find(m => m.id === item.mediaId);
+        if (!media) return null;
+        return {
+        ...media,
+        duration: item.duration,
+        }
+    }).filter((item): item is MediaItem & { duration: number } => item !== null);
+
+    return { ...playlistData, items };
+}
+
+
+const trackExposure = async (mediaId?: string, deviceId?: string) => {
     try {
         await fetch('/api/exposure', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mediaId, mediaIds }),
+            body: JSON.stringify({ mediaId, deviceId }),
         });
     } catch (error) {
         console.error("Failed to track exposure:", error);
@@ -75,38 +85,34 @@ const extractSrcFromIframe = (iframeString: string): string => {
         if (match) {
             urlString = match[1];
         } else {
-            return ''; // No src found in iframe tag
+            return ''; 
         }
     }
 
     try {
         const url = new URL(urlString);
         if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
-            // Parâmetros para uma experiência de TV corporativa
             url.searchParams.set('autoplay', '1');
             url.searchParams.set('mute', '1');
             url.searchParams.set('loop', '1');
-            // A API de loop do YouTube requer que o ID do vídeo seja especificado na playlist
             const videoId = url.pathname.split('/').pop();
             if (videoId) {
                 url.searchParams.set('playlist', videoId);
             }
-            // Parâmetros para customização da interface
-            url.searchParams.set('modestbranding', '1'); // Remove logo do YouTube
-            url.searchParams.set('rel', '0'); // Não mostra vídeos relacionados
-            url.searchParams.set('controls', '0'); // Oculta controles
-            url.searchParams.set('disablekb', '1'); // Desativa teclado
+            url.searchParams.set('modestbranding', '1'); 
+            url.searchParams.set('rel', '0'); 
+            url.searchParams.set('controls', '0');
+            url.searchParams.set('disablekb', '1'); 
             return url.toString();
         }
         if (url.hostname.includes('vimeo.com')) {
              url.searchParams.set('autoplay', '1');
-             url.searchParams.set('muted', '1'); // Vimeo usa 'muted'
+             url.searchParams.set('muted', '1'); 
              url.searchParams.set('loop', '1');
              return url.toString();
         }
         return url.toString();
     } catch (error) {
-        // Se a criação da URL falhar, pode não ser uma URL válida. Retorne o original.
         return urlString;
     }
 };
@@ -118,6 +124,7 @@ const FooterImage: React.FC<{ src: string }> = ({ src }) => {
         return <span className="text-white font-bold text-lg mr-[5%]">crash</span>;
     }
 
+    // eslint-disable-next-line @next/next/no-img-element
     return (
         <img
             src={src}
@@ -131,25 +138,23 @@ const FooterImage: React.FC<{ src: string }> = ({ src }) => {
 };
 
 
-export default function DisplayClient({ playlistId }: { playlistId: string }) {
+export default function DisplayClient({ deviceId }: { deviceId: string }) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [current, setCurrent] = React.useState(0)
   const [playlist, setPlaylist] = React.useState<Playlist | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   
-  // Track exposure on initial load
   React.useEffect(() => {
     if (playlist && playlist.items.length > 0) {
-      trackExposure(playlist.items[0].id); // Track first item
+      trackExposure(playlist.items[0].id); 
       
       const hourlyTimer = setInterval(() => {
-        const allItemIds = playlist.items.map(item => item.id);
-        trackExposure(undefined, allItemIds);
-      }, 3600 * 1000); // 1 hour
+        trackExposure(undefined, deviceId);
+      }, 3600 * 1000); 
 
       return () => clearInterval(hourlyTimer);
     }
-  }, [playlist]);
+  }, [playlist, deviceId]);
 
   React.useEffect(() => {
     const fetchAndSetPlaylist = async () => {
@@ -162,7 +167,7 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
         });
         if (!res.ok) throw new Error('Falha ao buscar dados');
         const allData = await res.json();
-        const foundPlaylist = getPlaylistById(playlistId, allData);
+        const foundPlaylist = getPlaylistByDeviceId(deviceId, allData);
         setPlaylist(foundPlaylist);
       } catch (error) {
         console.error("Falha ao carregar playlist", error);
@@ -173,7 +178,7 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
     };
     
     fetchAndSetPlaylist();
-  }, [playlistId]);
+  }, [deviceId]);
 
 
   React.useEffect(() => {
@@ -184,7 +189,6 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
     const onSelect = () => {
       const newIndex = api.selectedScrollSnap();
       setCurrent(newIndex);
-      // Track exposure when slide changes
       trackExposure(playlist.items[newIndex].id);
     }
     
@@ -209,7 +213,7 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
     return (
         <div className="h-screen w-screen bg-black flex flex-col items-center justify-center text-primary-foreground">
             <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-            <p>Carregando playlist...</p>
+            <p>Carregando dispositivo...</p>
         </div>
     );
   }
@@ -217,8 +221,8 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
   if (!playlist) {
     return (
         <div className="h-screen w-screen bg-black flex flex-col items-center justify-center text-destructive-foreground">
-            <h1 className="text-3xl font-bold">Playlist não encontrada</h1>
-            <p>A playlist com o ID '{playlistId}' não pôde ser carregada.</p>
+            <h1 className="text-3xl font-bold">Dispositivo não encontrado ou sem playlist</h1>
+            <p>O dispositivo com ID '{deviceId}' não foi encontrado ou não está associado a uma playlist.</p>
         </div>
     );
   }
@@ -241,6 +245,7 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
             <Card className="h-screen w-screen border-0 rounded-none bg-black flex items-center justify-center">
               <CardContent className="flex items-center justify-center p-0 w-full h-full">
                 {item.type.startsWith('image/') && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.src!}
                       alt={item.name}
@@ -292,7 +297,7 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
                     className="absolute top-0 left-[5%] px-4 py-2 rounded-md"
                     style={{ 
                       backgroundColor: item.footerBgColor || 'rgba(0, 0, 0, 0.8)',
-                      transform: 'translateY(-50%)' // Move a tag para cima
+                      transform: 'translateY(-50%)' 
                     }}
                 >
                     <span className="font-bold uppercase text-xl text-white">
@@ -318,5 +323,3 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
     </Carousel>
   )
 }
-
-    

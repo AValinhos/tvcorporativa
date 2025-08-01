@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from 'react';
 import ContentUploader from '@/components/ContentUploader';
 import MediaManager from '@/components/MediaManager';
 import PlaylistManager from '@/components/PlaylistManager';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Loader2, Tv, Clapperboard, ListMusic, PlayCircle, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -38,6 +38,13 @@ export interface Playlist {
   id: string;
   name: string;
   items: PlaylistItemData[];
+  deviceIds: string[];
+}
+
+export interface Device {
+    id: string;
+    name: string;
+    playlistId: string;
 }
 
 export interface AnalyticsDataPoint {
@@ -49,8 +56,8 @@ export interface AnalyticsDataPoint {
 export default function Dashboard() {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsDataPoint[] | null>(null);
   const [exposureData, setExposureData] = useState<{ [key: string]: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -70,10 +77,7 @@ export default function Dashboard() {
       
       setMediaItems(data.mediaItems || []);
       setPlaylists(data.playlists || []);
-      
-      const sortedAnalytics = (data.analyticsData || []).sort((a: AnalyticsDataPoint, b: AnalyticsDataPoint) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      setAnalyticsData(sortedAnalytics);
-      
+      setDevices(data.devices || []);
       setExposureData(data.exposureData || null);
 
     } catch (error) {
@@ -100,28 +104,41 @@ export default function Dashboard() {
     return playlists.filter(playlist => playlist.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [playlists, searchQuery]);
 
-  const exposureByPlaylist = useMemo(() => {
-    if (!playlists || !exposureData || !mediaItems) return [];
-    return playlists.map(playlist => {
-      let exposedItemsCount = 0;
-      let totalViews = 0;
-
-      playlist.items.forEach(item => {
-        const views = exposureData[item.mediaId] || 0;
-        if (views > 0) {
-          exposedItemsCount++;
+  const exposureByDevice = useMemo(() => {
+    if (!devices || !playlists || !exposureData || !mediaItems) return [];
+    
+    return devices.map(device => {
+        const playlist = playlists.find(p => p.id === device.playlistId);
+        if (!playlist) {
+            return {
+                id: device.id,
+                name: device.name,
+                exposedItemsCount: 0,
+                totalItems: 0,
+                totalViews: 0,
+            };
         }
-        totalViews += views;
-      });
-      return {
-        id: playlist.id,
-        name: playlist.name,
-        exposedItemsCount,
-        totalItems: playlist.items.length,
-        totalViews,
-      };
+
+        let exposedItemsCount = 0;
+        let totalViews = 0;
+
+        playlist.items.forEach(item => {
+            const views = exposureData[item.mediaId] || 0;
+            if (views > 0) {
+                exposedItemsCount++;
+            }
+            totalViews += views;
+        });
+
+        return {
+            id: device.id,
+            name: device.name,
+            exposedItemsCount,
+            totalItems: playlist.items.length,
+            totalViews,
+        };
     });
-  }, [playlists, exposureData, mediaItems]);
+  }, [devices, playlists, exposureData, mediaItems]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -134,8 +151,8 @@ export default function Dashboard() {
               <Tv className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : playlists.length}</div>
-              <p className="text-xs text-muted-foreground">Cada playlist representa uma tela.</p>
+              <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : devices.length}</div>
+              <p className="text-xs text-muted-foreground">Total de dispositivos configurados.</p>
             </CardContent>
           </Card>
           <Card>
@@ -160,7 +177,7 @@ export default function Dashboard() {
           </Card>
           <Card>
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Exposição por Playlist</CardTitle>
+              <CardTitle className="text-sm font-medium">Exposição por Dispositivo</CardTitle>
               <Eye className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-0 flex items-center justify-center">
@@ -171,21 +188,21 @@ export default function Dashboard() {
                 ) : (
                 <Carousel className="w-full max-w-xs" opts={{ loop: true }}>
                   <CarouselContent>
-                    {exposureByPlaylist.map((p, index) => (
+                    {exposureByDevice.map((d, index) => (
                       <CarouselItem key={index}>
                           <div className="p-1">
                             <div className="p-4 flex flex-col items-center justify-center">
-                                <h3 className="text-base font-semibold">{p.name}</h3>
+                                <h3 className="text-base font-semibold">{d.name}</h3>
                                 <div className="flex items-center justify-center w-full gap-2 mt-1">
                                     <p className="text-xs text-muted-foreground">
-                                      {p.exposedItemsCount} de {p.totalItems} itens expostos.
+                                      {d.exposedItemsCount} de {d.totalItems} itens expostos.
                                     </p>
-                                    <Link href={`/display/${p.id}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer">
+                                    <Link href={`/display/${d.id}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer">
                                         <PlayCircle className="h-5 w-5 text-primary hover:text-primary/80" />
                                     </Link>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-2 font-semibold text-center truncate w-full" title={`${p.totalViews} visualizações`}>
-                                  Total de Visualizações: {p.totalViews}
+                                <p className="text-xs text-muted-foreground mt-2 font-semibold text-center truncate w-full" title={`${d.totalViews} visualizações`}>
+                                  Total de Visualizações: {d.totalViews}
                                 </p>
                             </div>
                         </div>
@@ -206,6 +223,7 @@ export default function Dashboard() {
               className="lg:col-span-3"
               mediaItems={mediaItems} 
               playlists={filteredPlaylists} 
+              devices={devices}
               onPlaylistUpdate={fetchData}
               isLoading={isLoading}
             />

@@ -4,6 +4,7 @@ import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 
 const exposureFilePath = path.join(process.cwd(), 'src', 'lib', 'exposure.json');
+const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'data.json');
 
 async function readExposureData(): Promise<{ [key: string]: number }> {
   try {
@@ -30,18 +31,28 @@ async function writeExposureData(data: { [key: string]: number }) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { mediaId, mediaIds } = body;
+    const { mediaId, deviceId } = body;
     const exposureData = await readExposureData();
 
     if (mediaId) {
         exposureData[mediaId] = (exposureData[mediaId] || 0) + 1;
     }
 
-    if (mediaIds && Array.isArray(mediaIds)) {
-        mediaIds.forEach(id => {
-            exposureData[id] = (exposureData[id] || 0) + 1;
-        });
+    // If deviceId is provided, track exposure for all items in the playlist linked to that device
+    if (deviceId) {
+        const dataFileContent = await fs.readFile(dataFilePath, 'utf-8');
+        const allData = JSON.parse(dataFileContent);
+        const device = allData.devices.find((d: any) => d.id === deviceId);
+        if (device && device.playlistId) {
+            const playlist = allData.playlists.find((p: any) => p.id === device.playlistId);
+            if (playlist && playlist.items) {
+                playlist.items.forEach((item: any) => {
+                    exposureData[item.mediaId] = (exposureData[item.mediaId] || 0) + 1;
+                });
+            }
+        }
     }
+
 
     await writeExposureData(exposureData);
     return NextResponse.json({ message: 'Dados de exposição atualizados com sucesso', data: exposureData }, { status: 200 });

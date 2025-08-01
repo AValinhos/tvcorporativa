@@ -1,8 +1,8 @@
 
+
 import { promises as fs } from 'fs';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
-import invariant from 'tiny-invariant';
 
 const analyticsFilePath = path.join(process.cwd(), 'src', 'lib', 'analytics.json');
 const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'data.json');
@@ -16,6 +16,13 @@ interface Playlist {
   id: string;
   name: string;
   items: { mediaId: string; duration: number }[];
+  deviceIds?: string[];
+}
+
+interface Device {
+  id: string;
+  name: string;
+  playlistId: string;
 }
 
 async function readAnalyticsData(): Promise<AnalyticsDataPoint[]> {
@@ -46,7 +53,7 @@ async function readDataFile() {
         return JSON.parse(fileContent);
     } catch (error) {
         console.error('Error reading data file:', error);
-        return { playlists: [] };
+        return { playlists: [], devices: [] };
     }
 }
 
@@ -61,37 +68,36 @@ export async function POST(req: NextRequest) {
   try {
     const allData = await readDataFile();
     const playlists: Playlist[] = allData.playlists || [];
+    const devices: Device[] = allData.devices || [];
     const analyticsData = await readAnalyticsData();
 
     const today = new Date().toISOString().split('T')[0];
 
     const dailyDurations: { [key: string]: any } = { date: today };
-    playlists.forEach(playlist => {
-        const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
-        dailyDurations[playlist.name] = Math.ceil(totalDurationSeconds / 60);
+
+    devices.forEach(device => {
+        const playlist = playlists.find(p => p.id === device.playlistId);
+        if(playlist) {
+            const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
+            dailyDurations[device.name] = Math.ceil(totalDurationSeconds / 60); // Use device name
+        }
     });
 
-    // Ordena por data para garantir a consistência
     analyticsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     const todayIndex = analyticsData.findIndex(d => d.date === today);
 
     if (todayIndex > -1) {
-      // Se já existe, atualiza/sobrescreve com os dados mais recentes.
       analyticsData[todayIndex] = { ...analyticsData[todayIndex], ...dailyDurations };
     } else {
-      // Se não existe, adiciona um novo registro.
       analyticsData.push(dailyDurations);
     }
     
-    // Garante que a ordenação seja refeita após a adição de um novo elemento
     analyticsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Mantém apenas os últimos 30 dias
     if (analyticsData.length > 30) {
         analyticsData.splice(0, analyticsData.length - 30);
     }
-
 
     await writeAnalyticsData(analyticsData);
     return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: analyticsData }, { status: 200 });

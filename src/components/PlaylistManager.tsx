@@ -9,6 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
+
 import {
   Dialog,
   DialogContent,
@@ -28,12 +32,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
-import { MediaItem, Playlist as PlaylistData } from '@/app/page';
+import { MediaItem, Playlist as PlaylistData, Device } from '@/app/page';
 import { cn } from '@/lib/utils';
+
 
 interface FullPlaylistItem {
   mediaId: string;
@@ -41,20 +44,19 @@ interface FullPlaylistItem {
   name: string; 
 }
 
-interface Playlist {
-  id: string;
-  name: string;
+interface Playlist extends PlaylistData {
   items: FullPlaylistItem[];
 }
 
 interface PlaylistManagerProps extends React.HTMLAttributes<HTMLDivElement> {
     mediaItems: MediaItem[];
     playlists: PlaylistData[];
+    devices: Device[];
     onPlaylistUpdate: () => void;
     isLoading: boolean;
 }
 
-export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdate, isLoading, className }: PlaylistManagerProps) {
+export default function PlaylistManager({ mediaItems, playlists, devices, onPlaylistUpdate, isLoading, className }: PlaylistManagerProps) {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
   const [currentPlaylists, setCurrentPlaylists] = useState<Playlist[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -65,6 +67,9 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedPlaylistName, setEditedPlaylistName] = useState('');
+  
+  const [openDeviceSelector, setOpenDeviceSelector] = useState(false);
+
 
   const { toast } = useToast();
   
@@ -82,7 +87,7 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
         }));
         setCurrentPlaylists(fullPlaylists);
       
-      if (!selectedPlaylistId && fullPlaylists.length > 0) {
+      if ((!selectedPlaylistId || !fullPlaylists.find(p => p.id === selectedPlaylistId)) && fullPlaylists.length > 0) {
           setSelectedPlaylistId(fullPlaylists[0].id);
       } else if (playlists.length === 0) {
         setSelectedPlaylistId('');
@@ -102,9 +107,8 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
   }, [selectedPlaylist]);
 
   useEffect(() => {
-    // If the currently selected playlist is filtered out, reset the selection
     if (selectedPlaylistId && playlists.length > 0 && !playlists.find(p => p.id === selectedPlaylistId)) {
-      setSelectedPlaylistId(playlists[0].id);
+      setSelectedPlaylistId(playlists[0]?.id || '');
     }
   }, [playlists, selectedPlaylistId]);
 
@@ -114,17 +118,8 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
     const media = mediaItems.find(m => m.id === mediaId);
     if (!media) return;
 
-    const newPlaylistItem: FullPlaylistItem = {
-      mediaId,
-      duration: 10,
-      name: media.name,
-    };
-    
-    const updatedPlaylist = {
-      ...selectedPlaylist,
-      items: [...selectedPlaylist.items, newPlaylistItem],
-    };
-    
+    const newPlaylistItem: FullPlaylistItem = { mediaId, duration: 10, name: media.name };
+    const updatedPlaylist = { ...selectedPlaylist, items: [...selectedPlaylist.items, newPlaylistItem] };
     updatePlaylistInState(updatedPlaylist);
   };
 
@@ -143,6 +138,17 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
     updatePlaylistInState(updatedPlaylist);
   };
   
+  const handleDeviceSelection = (deviceId: string) => {
+    if (!selectedPlaylist) return;
+    const currentDeviceIds = selectedPlaylist.deviceIds || [];
+    const newDeviceIds = currentDeviceIds.includes(deviceId)
+      ? currentDeviceIds.filter(id => id !== deviceId)
+      : [...currentDeviceIds, deviceId];
+
+    const updatedPlaylist = { ...selectedPlaylist, deviceIds: newDeviceIds };
+    updatePlaylistInState(updatedPlaylist);
+  }
+
   const updatePlaylistInState = (updatedPlaylist: Playlist) => {
       const updatedPlaylists = currentPlaylists.map(p => p.id === updatedPlaylist.id ? updatedPlaylist : p);
       setCurrentPlaylists(updatedPlaylists);
@@ -182,10 +188,7 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
     }
     setIsProcessing(true);
     try {
-        const newPlaylistPayload = {
-            name: newPlaylistName,
-            items: []
-        };
+        const newPlaylistPayload = { name: newPlaylistName, items: [] };
         const res = await fetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -243,7 +246,7 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
           });
           if (!res.ok) throw new Error('Falha ao deletar playlist');
           toast({ title: "Sucesso!", description: "Playlist deletada." });
-          setSelectedPlaylistId(''); // Reset selection
+          setSelectedPlaylistId(''); 
           onPlaylistUpdate();
       } catch (error: any) {
           toast({ variant: 'destructive', title: 'Erro', description: error.message });
@@ -270,15 +273,13 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
       <CardHeader>
         <CardTitle>Editor de Playlist</CardTitle>
         <CardDescription>
-            {selectedPlaylist ? (
-                <>URL da Tela: <Link href={`/display/${selectedPlaylistId}`} className="underline text-primary">{`/display/${selectedPlaylistId}`}</Link></>
-            ) : "Nenhuma playlist selecionada. Crie uma para começar."}
+            Selecione uma playlist para editar seus conteúdos e associar a dispositivos.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
             <Select value={selectedPlaylistId} onValueChange={setSelectedPlaylistId} disabled={playlists.length === 0}>
-                <SelectTrigger>
+                <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Selecione uma playlist" />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,6 +288,46 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
                     ))}
                 </SelectContent>
             </Select>
+
+            <Popover open={openDeviceSelector} onOpenChange={setOpenDeviceSelector}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openDeviceSelector}
+                        className="w-[250px] justify-between"
+                        disabled={!selectedPlaylist}
+                    >
+                       {selectedPlaylist?.deviceIds?.length > 0
+                        ? `${selectedPlaylist.deviceIds.length} dispositivo(s) selecionado(s)`
+                        : "Associar a Dispositivos"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[250px] p-0">
+                   <Command>
+                       <CommandInput placeholder="Buscar dispositivo..." />
+                       <CommandEmpty>Nenhum dispositivo encontrado.</CommandEmpty>
+                       <CommandGroup>
+                           {devices.map(device => (
+                               <CommandItem
+                                key={device.id}
+                                onSelect={() => handleDeviceSelection(device.id)}
+                               >
+                                  <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedPlaylist?.deviceIds?.includes(device.id) ? "opacity-100" : "opacity-0"
+                                    )}
+                                   />
+                                   {device.name}
+                               </CommandItem>
+                           ))}
+                       </CommandGroup>
+                   </Command>
+                </PopoverContent>
+            </Popover>
+
 
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
@@ -416,4 +457,3 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
     </Card>
   );
 }
-
