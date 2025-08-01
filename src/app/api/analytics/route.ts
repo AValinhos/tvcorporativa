@@ -1,3 +1,4 @@
+
 import { promises as fs } from 'fs';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
@@ -64,35 +65,26 @@ export async function POST(req: NextRequest) {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // Verifica se já existe um registro para o dia de hoje
+    const dailyDurations: { [key: string]: any } = { date: today };
+    playlists.forEach(playlist => {
+        const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
+        dailyDurations[playlist.name] = Math.ceil(totalDurationSeconds / 60);
+    });
+
     const todayIndex = analyticsData.findIndex(d => d.date === today);
 
-    // Se já existe um registro para hoje e não estamos forçando uma atualização, podemos retornar.
-    // Ou, podemos sempre recalcular e sobrescrever para garantir os dados mais recentes do dia.
-    // Vamos adotar a abordagem de apenas adicionar se não existir para evitar múltiplas escritas.
     if (todayIndex > -1) {
-      // Opcional: Atualizar o registro existente em vez de pular.
-      // Por agora, vamos apenas adicionar se não existir para simplificar.
-      const dailyDurations: { [key: string]: any } = { date: today };
-      playlists.forEach(playlist => {
-          const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
-          dailyDurations[playlist.name] = Math.ceil(totalDurationSeconds / 60);
-      });
+      // Se já existe, atualiza/sobrescreve com os dados mais recentes.
       analyticsData[todayIndex] = { ...analyticsData[todayIndex], ...dailyDurations };
     } else {
-       // Calcula a duração total para cada playlist
-      const dailyDurations: { [key: string]: any } = { date: today };
-      playlists.forEach(playlist => {
-        const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
-        dailyDurations[playlist.name] = Math.ceil(totalDurationSeconds / 60); // Convertendo para minutos
-      });
-      // Adiciona um novo registro
+      // Se não existe, adiciona um novo registro.
       analyticsData.push(dailyDurations);
     }
     
     // Ordena por data e mantém apenas os últimos 30 dias
     analyticsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     if (analyticsData.length > 30) {
+        // Garante que não tenhamos mais de 30 registros
         analyticsData.splice(0, analyticsData.length - 30);
     }
 
