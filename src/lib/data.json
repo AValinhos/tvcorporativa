@@ -142,8 +142,8 @@
       "showFooter": true,
       "footerText1": "parabenizar",
       "footerText2": "ti",
-      "footerBgColor": "#dc2626",
-      "footerImageSrc": ""
+      "footerBgColor": "#851e1e",
+      "footerImageSrc": "https://br.freepik.com/fotos-vetores-gratis/logo-designs"
     }
   ],
   "playlists": [
@@ -171,6 +171,26 @@
       "items": [
         {
           "mediaId": "1753821883026",
+          "duration": 10
+        },
+        {
+          "mediaId": "2",
+          "duration": 10
+        },
+        {
+          "mediaId": "3",
+          "duration": 10
+        },
+        {
+          "mediaId": "4",
+          "duration": 10
+        },
+        {
+          "mediaId": "5",
+          "duration": 10
+        },
+        {
+          "mediaId": "1753908871040",
           "duration": 10
         }
       ]

@@ -112,6 +112,25 @@ const extractSrcFromIframe = (iframeString: string): string => {
     }
 };
 
+const FooterImage: React.FC<{ src: string }> = ({ src }) => {
+    const [error, setError] = React.useState(false);
+
+    if (error || !src) {
+        return <span className="text-white font-bold text-lg mr-[5%]">crash</span>;
+    }
+
+    return (
+        <Image
+            src={src}
+            alt="Footer Image"
+            width={80}
+            height={80}
+            className="object-contain h-20 w-20 mr-[5%]"
+            onError={() => setError(true)}
+        />
+    );
+};
+
 
 export default function DisplayClient({ playlistId }: { playlistId: string }) {
   const [api, setApi] = React.useState<CarouselApi>()
@@ -299,13 +318,7 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
                         {item.footerText2}
                     </h2>
                      {item.footerImageSrc && (
-                        <Image
-                            src={item.footerImageSrc}
-                            alt="Footer Image"
-                            width={80}
-                            height={80}
-                            className="object-contain h-20 w-20 mr-[5%]"
-                        />
+                        <FooterImage src={item.footerImageSrc} />
                     )}
                 </div>
               </div>
