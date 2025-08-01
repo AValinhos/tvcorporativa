@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import {
-  LineChart,
-  Line,
-  CartesianGrid,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   Legend,
+  ResponsiveContainer,
 } from 'recharts';
 import {
   ChartContainer,
@@ -86,36 +86,34 @@ export default function ExposureChart() {
       }
     };
 
-    fetchData(true); // Carga inicial
+    fetchData(true);
 
     const interval = setInterval(() => {
-      fetchData(); // Atualizações periódicas
-    }, 60000); // Atualiza a cada 60 segundos
+      fetchData();
+    }, 60000);
 
-    return () => clearInterval(interval); // Limpa o intervalo quando o componente é desmontado
+    return () => clearInterval(interval);
   }, []);
 
   const chartData = useMemo(() => {
     if (!exposureData || !devices.length || !playlists.length) return [];
 
-    const data: ChartDataPoint[] = devices
-      .map((device) => {
-        const playlist = playlists.find((p) => p.id === device.playlistId);
-        let totalViews = 0;
+    const data: ChartDataPoint[] = devices.map((device) => {
+      const playlist = playlists.find((p) => p.id === device.playlistId);
+      let totalViews = 0;
 
-        if (playlist && playlist.items) {
-          totalViews = playlist.items.reduce((acc, item) => {
-            const views = exposureData[item.mediaId] || 0;
-            return acc + (Array.isArray(views) ? views.length : Number(views) || 0);
-          }, 0);
-        }
+      if (playlist && playlist.items) {
+        totalViews = playlist.items.reduce((acc, item) => {
+          const views = exposureData[item.mediaId] || 0;
+          return acc + (Array.isArray(views) ? views.length : Number(views) || 0);
+        }, 0);
+      }
 
-        return {
-          name: device.name,
-          views: totalViews,
-        };
-      })
-      .sort((a, b) => b.views - a.views); // Sort by views descending
+      return {
+        name: device.name,
+        views: totalViews,
+      };
+    }).sort((a, b) => a.views - b.views); // Sort ascending for horizontal bar chart
 
     return data;
   }, [exposureData, devices, playlists]);
@@ -146,32 +144,38 @@ export default function ExposureChart() {
       </p>
     );
   }
+  
+  const chartHeight = chartData.length * 50 + 50;
+
 
   return (
-    <ChartContainer config={chartConfig} className="w-full min-h-[300px]">
-      <LineChart accessibilityLayer data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="name"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          tickFormatter={(value) => value.slice(0, 15) + (value.length > 15 ? '...' : '')}
-        />
-        <YAxis />
-        <Tooltip
-          cursor={false}
-          content={<ChartTooltipContent indicator="line" />}
-        />
-        <Legend content={<ChartLegendContent />} />
-        <Line
-          dataKey="views"
-          type="monotone"
-          stroke="var(--color-views)"
-          strokeWidth={2}
-          dot={true}
-        />
-      </LineChart>
+    <ChartContainer config={chartConfig} className="w-full" style={{ height: `${chartHeight}px` }}>
+      <ResponsiveContainer>
+        <BarChart
+            accessibilityLayer
+            data={chartData}
+            layout="vertical"
+            margin={{ left: 10, right: 30 }}
+            barCategoryGap="-15%"
+        >
+            <XAxis type="number" hide />
+            <YAxis
+            dataKey="name"
+            type="category"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={10}
+            width={100}
+            tickFormatter={(value) => value.slice(0, 15) + (value.length > 15 ? '...' : '')}
+            />
+            <Tooltip
+            cursor={{ fill: 'hsl(var(--muted))' }}
+            content={<ChartTooltipContent indicator="line" />}
+            />
+            <Legend content={<ChartLegendContent />} />
+            <Bar dataKey="views" radius={4} fill="var(--color-views)" barSize={20} />
+        </BarChart>
+      </ResponsiveContainer>
     </ChartContainer>
   );
 }
