@@ -77,8 +77,9 @@ export async function POST(req: NextRequest) {
     
     let analyticsData = await readAnalyticsData();
     
+    // Use UTC date to avoid timezone issues
     const today = new Date();
-    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayString = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).toISOString().split('T')[0];
 
     const dailyDurations: { [key: string]: any } = { date: todayString };
      devices.forEach(device => {
@@ -93,10 +94,8 @@ export async function POST(req: NextRequest) {
 
     const todayIndex = analyticsData.findIndex(d => d.date === todayString);
     if (todayIndex > -1) {
-        // Update today's data, keeping any existing device data
         analyticsData[todayIndex] = { ...analyticsData[todayIndex], ...dailyDurations };
     } else {
-        // Add new entry for today
         analyticsData.push(dailyDurations);
     }
     

@@ -48,11 +48,7 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
       return { chartData: [], chartConfig: {} };
     }
 
-    const today = new Date();
-    const last30Days: AnalyticsDataPoint[] = [];
     const allDeviceKeys = new Set<string>();
-
-    // First pass to get all possible device names
     analyticsData.forEach(d => {
         Object.keys(d).forEach(key => {
             if (key !== 'date') {
@@ -62,21 +58,28 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
     });
 
     const dataMap = new Map(analyticsData.map(d => [d.date, d]));
+    const last30Days: AnalyticsDataPoint[] = [];
+    
+    // Use UTC date to avoid timezone issues during date calculations
+    const today = new Date();
+    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
 
     for (let i = 29; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const date = new Date(todayUTC);
+        date.setUTCDate(todayUTC.getUTCDate() - i);
         
-        const dayData = dataMap.get(dateString);
-        const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        const dateString = date.toISOString().split('T')[0];
+        const dayData = dataMap.get(dateString) || {};
+        const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
         
-        const dataPoint: AnalyticsDataPoint = { date: formattedDate };
+        const dataPoint: AnalyticsDataPoint = { date: formattedDate, ...dayData };
         
         allDeviceKeys.forEach(key => {
-            dataPoint[key] = dayData?.[key] || 0;
+            if (!dataPoint.hasOwnProperty(key)) {
+                dataPoint[key] = 0;
+            }
         });
-
+        
         last30Days.push(dataPoint);
     }
     
