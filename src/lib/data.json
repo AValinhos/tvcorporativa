@@ -163,7 +163,8 @@
           "mediaId": "1753908871040",
           "duration": 10
         }
-      ]
+      ],
+      "deviceIds": []
     },
     {
       "id": "2",
@@ -193,7 +194,8 @@
           "mediaId": "1753908871040",
           "duration": 10
         }
-      ]
+      ],
+      "deviceIds": []
     },
     {
       "id": "3",
@@ -207,7 +209,8 @@
           "mediaId": "1753729978356",
           "duration": 10
         }
-      ]
+      ],
+      "deviceIds": []
     }
   ],
   "devices": [
@@ -215,6 +218,11 @@
       "name": "tv do ponto",
       "playlistId": "1",
       "id": "1"
+    },
+    {
+      "name": "Tv refeitório ",
+      "playlistId": "2",
+      "id": "2"
     }
   ]
 }

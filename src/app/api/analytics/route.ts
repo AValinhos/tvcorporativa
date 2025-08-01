@@ -71,37 +71,67 @@ export async function POST(req: NextRequest) {
     const devices: Device[] = allData.devices || [];
     const analyticsData = await readAnalyticsData();
 
-    const today = new Date().toISOString().split('T')[0];
+    // --- Start: Logic to ensure last 30 days are present ---
+    const today = new Date();
+    const last30Days: { [date: string]: AnalyticsDataPoint } = {};
+    const allDeviceNames = new Set(devices.map(d => d.name));
 
-    const dailyDurations: { [key: string]: any } = { date: today };
+    // Initialize the last 30 days with empty data points
+    for (let i = 0; i < 30; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dateString = date.toISOString().split('T')[0];
+        const initialData: AnalyticsDataPoint = { date: dateString };
+        allDeviceNames.forEach(name => initialData[name] = 0);
+        last30Days[dateString] = initialData;
+    }
 
+    // Populate with existing data
+    analyticsData.forEach(d => {
+        if (last30Days[d.date]) {
+            last30Days[d.date] = { ...last30Days[d.date], ...d };
+        }
+    });
+
+    // --- End: Logic to ensure last 30 days are present ---
+
+    const todayString = today.toISOString().split('T')[0];
+
+    // Calculate today's durations
+    const dailyDurations: { [key: string]: any } = { date: todayString };
+    let activityToday = false;
     devices.forEach(device => {
         const playlist = playlists.find(p => p.id === device.playlistId);
         if(playlist) {
             const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
-            dailyDurations[device.name] = Math.ceil(totalDurationSeconds / 60); // Use device name
+            dailyDurations[device.name] = Math.ceil(totalDurationSeconds / 60); 
+            if(totalDurationSeconds > 0) activityToday = true;
+        } else {
+             dailyDurations[device.name] = 0;
         }
     });
 
-    analyticsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    const todayIndex = analyticsData.findIndex(d => d.date === today);
-
-    if (todayIndex > -1) {
-      analyticsData[todayIndex] = { ...analyticsData[todayIndex], ...dailyDurations };
-    } else {
-      analyticsData.push(dailyDurations);
-    }
-    
-    analyticsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    if (analyticsData.length > 30) {
-        analyticsData.splice(0, analyticsData.length - 30);
+    // Update today's data point in our 30-day map
+    if(last30Days[todayString]) {
+       last30Days[todayString] = { ...last30Days[todayString], ...dailyDurations };
     }
 
-    await writeAnalyticsData(analyticsData);
-    return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: analyticsData }, { status: 200 });
+
+    // Convert map back to an array and sort by date
+    const finalAnalyticsData = Object.values(last30Days).sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    // Ensure we don't have more than 30 days if the logic above adds extra
+    if (finalAnalyticsData.length > 30) {
+        finalAnalyticsData.splice(0, finalAnalyticsData.length - 30);
+    }
+
+
+    await writeAnalyticsData(finalAnalyticsData);
+    return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: finalAnalyticsData }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ message: 'Erro ao atualizar dados de analytics', error: error.message }, { status: 500 });
   }
 }
+
