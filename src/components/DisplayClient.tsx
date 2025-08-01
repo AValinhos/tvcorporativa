@@ -56,6 +56,18 @@ const getPlaylistById = (id: string, allData: { mediaItems: MediaItem[], playlis
   return { ...playlistData, items };
 }
 
+const trackExposure = async (mediaId?: string, mediaIds?: string[]) => {
+    try {
+        await fetch('/api/exposure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mediaId, mediaIds }),
+        });
+    } catch (error) {
+        console.error("Failed to track exposure:", error);
+    }
+};
+
 const extractSrcFromIframe = (iframeString: string): string => {
     let urlString = iframeString;
 
@@ -106,6 +118,20 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
   const [current, setCurrent] = React.useState(0)
   const [playlist, setPlaylist] = React.useState<Playlist | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  
+  // Track exposure on initial load
+  React.useEffect(() => {
+    if (playlist && playlist.items.length > 0) {
+      trackExposure(playlist.items[0].id); // Track first item
+      
+      const hourlyTimer = setInterval(() => {
+        const allItemIds = playlist.items.map(item => item.id);
+        trackExposure(undefined, allItemIds);
+      }, 3600 * 1000); // 1 hour
+
+      return () => clearInterval(hourlyTimer);
+    }
+  }, [playlist]);
 
   React.useEffect(() => {
     const fetchAndSetPlaylist = async () => {
@@ -134,7 +160,10 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
     }
 
     const onSelect = () => {
-      setCurrent(api.selectedScrollSnap())
+      const newIndex = api.selectedScrollSnap();
+      setCurrent(newIndex);
+      // Track exposure when slide changes
+      trackExposure(playlist.items[newIndex].id);
     }
     
     api.on("select", onSelect)

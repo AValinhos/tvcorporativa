@@ -147,6 +147,7 @@ export default function Dashboard() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsDataPoint[] | null>(null);
+  const [exposureData, setExposureData] = useState<{ [key: string]: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchData = async () => {
@@ -165,6 +166,12 @@ export default function Dashboard() {
         setAnalyticsData(analytics);
       }
       
+      const exposureRes = await fetch('/api/exposure');
+      if (exposureRes.ok) {
+          const exposure = await exposureRes.json();
+          setExposureData(exposure);
+      }
+
     } catch (error) {
       console.error(error);
     } finally {
@@ -195,37 +202,29 @@ export default function Dashboard() {
   }, [isLoading]);
 
 
-  const { totalExposureMinutes, mostViewedItemName } = useMemo(() => {
-    if (isLoading || playlists.length === 0 || mediaItems.length === 0) {
-      return { totalExposureMinutes: 0, mostViewedItemName: 'N/A' };
+  const { totalExposedItems, mostViewedItemName } = useMemo(() => {
+    if (isLoading || !exposureData || !mediaItems || mediaItems.length === 0) {
+      return { totalExposedItems: 0, mostViewedItemName: 'N/A' };
     }
 
-    let totalSeconds = 0;
-    const exposureCount: { [key: string]: number } = {};
-    
-    playlists.forEach(playlist => {
-      playlist.items.forEach(item => {
-        totalSeconds += item.duration;
-        exposureCount[item.mediaId] = (exposureCount[item.mediaId] || 0) + item.duration;
-      });
-    });
+    const exposedItemsCount = Object.keys(exposureData).length;
 
     let mostViewedId = '';
     let maxExposure = 0;
-    for (const mediaId in exposureCount) {
-      if (exposureCount[mediaId] > maxExposure) {
-        maxExposure = exposureCount[mediaId];
-        mostViewedId = mediaId;
-      }
+    for (const mediaId in exposureData) {
+        if (exposureData[mediaId] > maxExposure) {
+            maxExposure = exposureData[mediaId];
+            mostViewedId = mediaId;
+        }
     }
     
     const mostViewedItem = mediaItems.find(item => item.id === mostViewedId);
     
     return {
-      totalExposureMinutes: Math.ceil(totalSeconds / 60),
+      totalExposedItems: exposedItemsCount,
       mostViewedItemName: mostViewedItem ? mostViewedItem.name : "Nenhum",
     };
-  }, [playlists, mediaItems, isLoading]);
+  }, [exposureData, mediaItems, isLoading]);
 
   const filteredMediaItems = useMemo(() => {
     if (!searchQuery) return mediaItems;
@@ -280,25 +279,24 @@ export default function Dashboard() {
                 <BarChart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : `~${totalExposureMinutes} min`}</div>
+                <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalExposedItems}</div>
                 <p className="text-xs text-muted-foreground">Mais visto: "{mostViewedItemName}"</p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
-            <div className="grid auto-rows-max items-start gap-4 md:gap-8">
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-                <ContentUploader onContentSaved={fetchData} />
-                <PlaylistManager 
-                  mediaItems={mediaItems} 
-                  playlists={filteredPlaylists} 
-                  onPlaylistUpdate={fetchData}
-                  isLoading={isLoading}
-                />
-              </div>
+          <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+              <ContentUploader onContentSaved={fetchData} />
+              <PlaylistManager 
+                mediaItems={mediaItems} 
+                playlists={filteredPlaylists} 
+                onPlaylistUpdate={fetchData}
+                isLoading={isLoading}
+              />
+          </div>
+          
+           <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
               <MediaManager mediaItems={filteredMediaItems} onMediaUpdate={fetchData} isLoading={isLoading}/>
-            </div>
           </div>
           
           <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
