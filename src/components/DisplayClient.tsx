@@ -145,19 +145,18 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
-    // This effect runs only once when the component mounts.
-    // It registers the initial view for the device and sets up hourly tracking.
+    // Roda apenas uma vez ao montar para registrar a visualização da tela inteira.
     if (deviceId) {
-        // 1. First registration happens immediately on load.
+      // 1. Primeiro registro na abertura da tela.
+      trackExposure(undefined, deviceId);
+      
+      // 2. Registros subsequentes a cada hora.
+      const hourlyTimer = setInterval(() => {
         trackExposure(undefined, deviceId);
-
-        // 2. Subsequent registrations happen every hour.
-        const hourlyTimer = setInterval(() => {
-            trackExposure(undefined, deviceId);
-        }, 3600 * 1000); // 1 hour in milliseconds
-
-        // Cleanup function to clear the interval when the component unmounts.
-        return () => clearInterval(hourlyTimer);
+      }, 3600 * 1000); // 1 hora
+      
+      // Limpa o timer quando o componente é desmontado.
+      return () => clearInterval(hourlyTimer);
     }
   }, [deviceId]);
 
@@ -194,7 +193,7 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
     const onSelect = () => {
       const newIndex = api.selectedScrollSnap();
       setCurrent(newIndex);
-      // Track individual media item exposure on change
+      // Rastreia a exposição de cada item individualmente na troca.
       trackExposure(playlist.items[newIndex].id);
     }
     

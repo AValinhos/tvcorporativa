@@ -34,14 +34,17 @@ export async function POST(req: NextRequest) {
     const { mediaId, deviceId } = body;
     const exposureData = await readExposureData();
 
+    // Se um mediaId específico for enviado (ex: troca de item no carrossel), incrementa apenas ele.
     if (mediaId) {
         exposureData[mediaId] = (exposureData[mediaId] || 0) + 1;
     }
 
+    // Se um deviceId for enviado (ex: carregamento da tela), incrementa todos os itens da playlist associada.
     if (deviceId) {
         const dataFileContent = await fs.readFile(dataFilePath, 'utf-8');
         const allData = JSON.parse(dataFileContent);
         const device = allData.devices.find((d: any) => d.id === deviceId);
+        
         if (device && device.playlistId) {
             const playlist = allData.playlists.find((p: any) => p.id === device.playlistId);
             if (playlist && playlist.items) {
