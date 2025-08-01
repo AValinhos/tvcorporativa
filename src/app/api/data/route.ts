@@ -27,6 +27,7 @@ async function writeData(data: any) {
 async function updateAnalytics() {
     try {
         const host = process.env.NEXT_PUBLIC_HOST_URL || `http://localhost:9002`;
+        // Use await to ensure this call completes before the main response is sent.
         await fetch(`${host}/api/analytics`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
 
     await writeData(data);
     
+    // If a playlist-related action occurred, trigger the analytics update.
     if (analyticsShouldUpdate) {
         await updateAnalytics();
     }

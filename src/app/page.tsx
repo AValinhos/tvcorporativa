@@ -153,19 +153,24 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       if (!isLoading) setIsLoading(true);
+      
+      // Fetch all primary data
       const res = await fetch('/api/data');
       if (!res.ok) throw new Error('Falha ao buscar dados');
       const data = await res.json();
       setMediaItems(data.mediaItems || []);
       setPlaylists(data.playlists || []);
       
+      // Fetch analytics data
       const analyticsRes = await fetch('/api/analytics');
       if(analyticsRes.ok) {
         const analytics = await analyticsRes.json();
+        // Ensure data is sorted by date for the chart
         analytics.sort((a: AnalyticsDataPoint, b: AnalyticsDataPoint) => new Date(a.date).getTime() - new Date(b.date).getTime());
         setAnalyticsData(analytics);
       }
       
+      // Fetch exposure data
       const exposureRes = await fetch('/api/exposure');
       if (exposureRes.ok) {
           const exposure = await exposureRes.json();
@@ -180,18 +185,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    // Apenas aciona a coleta de dados uma vez.
-    // A API agora é inteligente o suficiente para não duplicar entradas para o mesmo dia.
-    fetch('/api/analytics', { method: 'POST' })
-      .then(() => {
-        // Após a tentativa de atualização, busca todos os dados.
-        fetchData();
-      })
-      .catch(err => {
-        console.error("Falha ao acionar a atualização de analytics:", err);
-        // Mesmo se a atualização falhar, busca os dados existentes.
-        fetchData();
-      });
+    // Initial data fetch when component mounts.
+    // The analytics update is now handled by the /api/data endpoint
+    // when playlists are modified.
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
