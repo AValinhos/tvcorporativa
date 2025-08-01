@@ -206,26 +206,21 @@ export default function Dashboard() {
     if (!playlists || !exposureData || !mediaItems) return [];
     return playlists.map(playlist => {
       let exposedItemsCount = 0;
-      let mostPopularItem = { name: 'N/A', views: 0 };
-      let maxViews = 0;
+      let totalViews = 0;
 
       playlist.items.forEach(item => {
-        if (exposureData[item.mediaId]) {
+        const views = exposureData[item.mediaId] || 0;
+        if (views > 0) {
           exposedItemsCount++;
-          const currentViews = exposureData[item.mediaId];
-          if (currentViews > maxViews) {
-            maxViews = currentViews;
-            const media = mediaItems.find(m => m.id === item.mediaId);
-            mostPopularItem = { name: media ? media.name : 'Desconhecido', views: currentViews };
-          }
         }
+        totalViews += views;
       });
       return {
         id: playlist.id,
         name: playlist.name,
         exposedItemsCount,
         totalItems: playlist.items.length,
-        mostPopularItem
+        totalViews,
       };
     });
   }, [playlists, exposureData, mediaItems]);
@@ -281,19 +276,19 @@ export default function Dashboard() {
                     <CarouselContent>
                       {exposureByPlaylist.map((p, index) => (
                         <CarouselItem key={index}>
-                          <div className="p-1">
+                           <div className="p-1">
                               <div className="p-4 flex flex-col items-center justify-center">
-                                  <div className="flex items-center justify-between w-full">
-                                    <h3 className="text-base font-semibold">{p.name}</h3>
-                                    <Link href={`/display/${p.id}`} title="Ver Tela ao Vivo">
-                                        <PlayCircle className="h-6 w-6 text-primary hover:text-primary/80" />
-                                    </Link>
+                                  <h3 className="text-base font-semibold">{p.name}</h3>
+                                  <div className="flex items-center justify-center w-full gap-2 mt-1">
+                                      <p className="text-xs text-muted-foreground">
+                                        {p.exposedItemsCount} de {p.totalItems} itens expostos.
+                                      </p>
+                                      <Link href={`/display/${p.id}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer">
+                                          <PlayCircle className="h-5 w-5 text-primary hover:text-primary/80" />
+                                      </Link>
                                   </div>
-                                  <p className="text-xs text-muted-foreground mt-1 text-center">
-                                    {p.exposedItemsCount} de {p.totalItems} itens expostos.
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-2 font-semibold text-center truncate w-full" title={p.mostPopularItem.name}>
-                                    Popular: {p.mostPopularItem.name} ({p.mostPopularItem.views} visualizações)
+                                  <p className="text-xs text-muted-foreground mt-2 font-semibold text-center truncate w-full" title={`${p.totalViews} visualizações`}>
+                                    Total de Visualizações: {p.totalViews}
                                   </p>
                               </div>
                           </div>
@@ -348,6 +343,7 @@ export default function Dashboard() {
     </AuthGuard>
   );
 }
+
 
 
 
