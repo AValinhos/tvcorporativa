@@ -10,7 +10,7 @@ import MediaManager from '@/components/MediaManager';
 import PlaylistManager from '@/components/PlaylistManager';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart, Tv, Clapperboard, ListMusic, Loader2, ArrowRight, Eye } from 'lucide-react';
+import { BarChart, Tv, Clapperboard, ListMusic, Loader2, ArrowRight, Eye, PlayCircle } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -202,6 +202,33 @@ export default function Dashboard() {
     return playlists.filter(playlist => playlist.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [playlists, searchQuery]);
 
+  const exposureByPlaylist = useMemo(() => {
+    if (!playlists || !exposureData || !mediaItems) return [];
+    return playlists.map(playlist => {
+      let exposedItemsCount = 0;
+      let mostPopularItem = { name: 'N/A', views: 0 };
+      let maxViews = 0;
+
+      playlist.items.forEach(item => {
+        if (exposureData[item.mediaId]) {
+          exposedItemsCount++;
+          const currentViews = exposureData[item.mediaId];
+          if (currentViews > maxViews) {
+            maxViews = currentViews;
+            const media = mediaItems.find(m => m.id === item.mediaId);
+            mostPopularItem = { name: media ? media.name : 'Desconhecido', views: currentViews };
+          }
+        }
+      });
+      return {
+        id: playlist.id,
+        name: playlist.name,
+        exposedItemsCount,
+        totalItems: playlist.items.length,
+        mostPopularItem
+      };
+    });
+  }, [playlists, exposureData, mediaItems]);
 
   return (
     <AuthGuard>
@@ -240,13 +267,43 @@ export default function Dashboard() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Exposição de Conteúdo</CardTitle>
+              <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Exposição por Playlist</CardTitle>
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (exposureData ? Object.keys(exposureData).length : 0)}</div>
-                <p className="text-xs text-muted-foreground">Itens de mídia expostos.</p>
+              <CardContent className="p-0 flex items-center justify-center">
+                 {isLoading ? (
+                    <div className="h-24 flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : (
+                  <Carousel className="w-full max-w-xs">
+                    <CarouselContent>
+                      {exposureByPlaylist.map((p, index) => (
+                        <CarouselItem key={index}>
+                          <div className="p-1">
+                              <div className="p-4 flex flex-col items-center justify-center">
+                                  <div className="flex items-center justify-between w-full">
+                                    <h3 className="text-base font-semibold">{p.name}</h3>
+                                    <Link href={`/display/${p.id}`} title="Ver Tela ao Vivo">
+                                        <PlayCircle className="h-6 w-6 text-primary hover:text-primary/80" />
+                                    </Link>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1 text-center">
+                                    {p.exposedItemsCount} de {p.totalItems} itens expostos.
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-2 font-semibold text-center truncate w-full" title={p.mostPopularItem.name}>
+                                    Popular: {p.mostPopularItem.name} ({p.mostPopularItem.views} visualizações)
+                                  </p>
+                              </div>
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2" />
+                    <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2" />
+                  </Carousel>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -291,4 +348,6 @@ export default function Dashboard() {
     </AuthGuard>
   );
 }
+
+
 
