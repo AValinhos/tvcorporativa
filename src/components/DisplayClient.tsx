@@ -145,22 +145,19 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
-    // This effect runs only once when the component mounts
-    // It registers the initial view for the entire playlist of the device
-    // and sets up the hourly tracking.
-    const setupHourlyTracking = () => {
-        trackExposure(undefined, deviceId); // Initial tracking for the device
-        
+    // This effect runs only once when the component mounts.
+    // It registers the initial view for the device and sets up hourly tracking.
+    if (deviceId) {
+        // 1. First registration happens immediately on load.
+        trackExposure(undefined, deviceId);
+
+        // 2. Subsequent registrations happen every hour.
         const hourlyTimer = setInterval(() => {
             trackExposure(undefined, deviceId);
-        }, 3600 * 1000); // 1 hour
+        }, 3600 * 1000); // 1 hour in milliseconds
 
+        // Cleanup function to clear the interval when the component unmounts.
         return () => clearInterval(hourlyTimer);
-    };
-
-    if (deviceId) {
-        const cleanup = setupHourlyTracking();
-        return cleanup;
     }
   }, [deviceId]);
 
