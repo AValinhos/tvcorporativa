@@ -83,8 +83,8 @@ export async function POST(req: NextRequest) {
     let analyticsData = await readAnalyticsData();
     
     const now = new Date();
-    const dateString = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const timeString = now.toTimeString().split(' ')[0]; // HH:MM:SS
+    const dateString = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now).split('/').reverse().join('-');
+    const timeString = now.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
 
     const newDatapoint: AnalyticsDataPoint = { date: dateString, time: timeString };
 
