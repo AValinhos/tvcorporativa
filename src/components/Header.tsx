@@ -86,9 +86,9 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
           </nav>
         </SheetContent>
       </Sheet>
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
+      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4 justify-end">
         {setSearchQuery && (
-          <form className="ml-auto flex-1 sm:flex-initial">
+          <form className="flex-1 sm:flex-initial">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -103,7 +103,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full ml-auto">
+            <Button variant="secondary" size="icon" className="rounded-full">
               <CircleUser className="h-5 w-5" />
               <span className="sr-only">Alternar menu de usuário</span>
             </Button>
