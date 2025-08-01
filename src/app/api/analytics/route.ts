@@ -2,7 +2,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
-import { startOfDay } from 'date-fns';
 
 const analyticsFilePath = path.join(process.cwd(), 'src', 'lib', 'analytics.json');
 const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'data.json');
@@ -32,7 +31,7 @@ async function readAnalyticsData(): Promise<AnalyticsDataPoint[]> {
     // Garante que todos os registros tenham um campo 'time'
     return data.map(d => ({
         ...d,
-        time: d.time || '00:00:00' 
+        time: d.time || '00:00:00'
     }));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
