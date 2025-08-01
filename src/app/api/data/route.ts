@@ -1,9 +1,12 @@
 
+
 import { promises as fs } from 'fs';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 
 const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'data.json');
+const analyticsFilePath = path.join(process.cwd(), 'src', 'lib', 'analytics.json');
+const exposureFilePath = path.join(process.cwd(), 'src', 'lib', 'exposure.json');
 
 async function readData() {
   try {
@@ -24,11 +27,13 @@ async function writeData(data: any) {
   }
 }
 
-async function updateAnalytics() {
+async function updateAnalytics(req: NextRequest) {
     try {
-        const host = process.env.NEXT_PUBLIC_HOST_URL || `http://localhost:9002`;
+        const host = req.headers.get('host')
+        const protocol = host?.includes('localhost') ? 'http' : 'https'
+        
         // Use await to ensure this call completes before the main response is sent.
-        await fetch(`${host}/api/analytics`, {
+        await fetch(`${protocol}://${host}/api/analytics`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
         });
@@ -38,17 +43,30 @@ async function updateAnalytics() {
 }
 
 
-export async function GET() {
-  const data = await readData();
-  return NextResponse.json(data);
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const data = await readData();
     const body = await req.json();
+    let data = await readData();
     let analyticsShouldUpdate = false;
 
+    if (body.action === 'GET_DASHBOARD_DATA') {
+        // This action triggers an analytics update and then fetches all data
+        await updateAnalytics(req);
+        // Re-read data files after potential update
+        const [allData, analyticsData, exposureData] = await Promise.all([
+            readData(),
+            fs.readFile(analyticsFilePath, 'utf-8').then(JSON.parse).catch(() => []),
+            fs.readFile(exposureFilePath, 'utf-8').then(JSON.parse).catch(() => ({}))
+        ]);
+
+        return NextResponse.json({ 
+            ...allData,
+            analyticsData, 
+            exposureData
+        }, { status: 200 });
+    }
+    
+    // --- Other actions ---
     if (body.action === 'CREATE_MEDIA') {
       data.mediaItems.push(body.payload);
     } else if (body.action === 'UPDATE_MEDIA') {
@@ -101,11 +119,11 @@ export async function POST(req: NextRequest) {
     
     // If a playlist-related action occurred, trigger the analytics update.
     if (analyticsShouldUpdate) {
-        await updateAnalytics();
+        await updateAnalytics(req);
     }
 
     return NextResponse.json({ message: 'Dados atualizados com sucesso', data }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Erro ao atualizar dados', error: error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Erro ao processar a ação', error: error.message }, { status: 500 });
   }
 }

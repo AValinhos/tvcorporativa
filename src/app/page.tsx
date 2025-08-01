@@ -160,24 +160,23 @@ export default function Dashboard() {
     try {
       if (!isLoading) setIsLoading(true);
       
-      const res = await fetch('/api/data');
-      if (!res.ok) throw new Error('Falha ao buscar dados');
+      const res = await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'GET_DASHBOARD_DATA' }),
+      });
+
+      if (!res.ok) throw new Error('Falha ao buscar dados do painel');
+      
       const data = await res.json();
+      
       setMediaItems(data.mediaItems || []);
       setPlaylists(data.playlists || []);
       
-      const analyticsRes = await fetch('/api/analytics');
-      if(analyticsRes.ok) {
-        const analytics = await analyticsRes.json();
-        analytics.sort((a: AnalyticsDataPoint, b: AnalyticsDataPoint) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        setAnalyticsData(analytics);
-      }
+      const sortedAnalytics = (data.analyticsData || []).sort((a: AnalyticsDataPoint, b: AnalyticsDataPoint) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setAnalyticsData(sortedAnalytics);
       
-      const exposureRes = await fetch('/api/exposure');
-      if (exposureRes.ok) {
-          const exposure = await exposureRes.json();
-          setExposureData(exposure);
-      }
+      setExposureData(data.exposureData || null);
 
     } catch (error) {
       console.error(error);
@@ -185,6 +184,7 @@ export default function Dashboard() {
       setIsLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchData();
@@ -343,8 +343,4 @@ export default function Dashboard() {
     </AuthGuard>
   );
 }
-
-
-
-
 
