@@ -75,3 +75,4 @@ export async function GET() {
     const data = await readExposureData();
     return NextResponse.json(data);
 }
+
