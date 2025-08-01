@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Download, Upload } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+type BackupType = 'content' | 'visualization';
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
@@ -26,11 +30,13 @@ export default function SettingsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [exportType, setExportType] = useState<BackupType>('content');
+  const [importType, setImportType] = useState<BackupType>('content');
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const response = await fetch('/api/backup');
+      const response = await fetch(`/api/backup?type=${exportType}`);
       if (!response.ok) {
         throw new Error('Falha ao exportar os dados.');
       }
@@ -38,14 +44,14 @@ export default function SettingsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'data.json';
+      a.download = `${exportType}-backup.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
       toast({
         title: 'Exportação Concluída',
-        description: 'O arquivo data.json foi baixado com sucesso.',
+        description: `O arquivo ${exportType}-backup.json foi baixado.`,
       });
     } catch (error: any) {
       toast({
@@ -95,6 +101,8 @@ export default function SettingsPage() {
       
       const formData = new FormData();
       formData.append('file', selectedFile);
+      formData.append('type', importType);
+
 
       try {
           const response = await fetch('/api/backup', {
@@ -141,10 +149,19 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>Exportar Backup</CardTitle>
               <CardDescription>
-                Faça o download de um backup completo de seus dados (mídias, playlists, etc.) em um arquivo JSON.
+                Faça o download de um backup de seus dados em um arquivo JSON.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+               <Select value={exportType} onValueChange={(v) => setExportType(v as BackupType)}>
+                  <SelectTrigger className="w-[280px]">
+                      <SelectValue placeholder="Selecione o tipo de backup" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="content">Conteúdo (Mídias e Playlists)</SelectItem>
+                      <SelectItem value="visualization">Dados de Visualização</SelectItem>
+                  </SelectContent>
+              </Select>
               <Button onClick={handleExport} disabled={isExporting}>
                 {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 {isExporting ? 'Exportando...' : 'Exportar Dados'}
@@ -155,10 +172,24 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>Importar Backup</CardTitle>
               <CardDescription>
-                Importe um arquivo de backup JSON para restaurar seus dados. Atenção: isso substituirá todos os dados existentes.
+                Importe um arquivo de backup JSON para restaurar seus dados. Atenção: isso substituirá os dados existentes.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label className="mb-2 block">Tipo de Backup a Importar</Label>
+                <RadioGroup defaultValue="content" value={importType} onValueChange={(v) => setImportType(v as BackupType)}>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="content" id="r1" />
+                        <Label htmlFor="r1">Conteúdo (Mídias e Playlists)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="visualization" id="r2" />
+                        <Label htmlFor="r2">Dados de Visualização</Label>
+                    </div>
+                </RadioGroup>
+              </div>
+
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="backup-file">Arquivo de Backup (.json)</Label>
                 <Input id="backup-file" type="file" accept=".json" onChange={handleFileChange} ref={fileInputRef} />
@@ -176,7 +207,7 @@ export default function SettingsPage() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta ação substituirá permanentemente todos os dados atuais (mídias, playlists, etc.) pelos dados do arquivo de backup. Essa operação não pode ser desfeita.
+                        Esta ação substituirá permanentemente os dados de {importType === 'content' ? 'Conteúdo' : 'Visualização'} pelos dados do arquivo. Essa operação não pode ser desfeita.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
