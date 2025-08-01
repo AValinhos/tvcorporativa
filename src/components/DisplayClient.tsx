@@ -77,6 +77,17 @@ const trackExposure = async (payload: { mediaId?: string, deviceId?: string }) =
     }
 };
 
+const updateAnalytics = async () => {
+    try {
+        await fetch('/api/analytics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+    } catch (error) {
+        console.error("Failed to update analytics:", error);
+    }
+};
+
 const extractSrcFromIframe = (iframeString: string): string => {
     let urlString = iframeString;
 
@@ -145,18 +156,19 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
-    // Roda apenas uma vez ao montar para registrar a visualização da tela inteira.
     if (deviceId) {
-      // 1. Primeiro registro na abertura da tela.
-      trackExposure({ deviceId });
-      
-      // 2. Registros subsequentes a cada hora.
-      const hourlyTimer = setInterval(() => {
+        // 1. Primeiro registro na abertura da tela.
         trackExposure({ deviceId });
-      }, 3600 * 1000); // 1 hora
+        updateAnalytics();
       
-      // Limpa o timer quando o componente é desmontado.
-      return () => clearInterval(hourlyTimer);
+        // 2. Registros subsequentes a cada hora.
+        const hourlyTimer = setInterval(() => {
+             trackExposure({ deviceId });
+             updateAnalytics();
+        }, 3600 * 1000); // 1 hora
+      
+        // Limpa o timer quando o componente é desmontado.
+        return () => clearInterval(hourlyTimer);
     }
   }, [deviceId]);
 
