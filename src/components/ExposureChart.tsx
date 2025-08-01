@@ -143,7 +143,7 @@ export default function ExposureChart() {
           cursor={false}
           content={<ChartTooltipContent indicator="line" labelKey='views'/>}
         />
-        <Bar dataKey="views" fill="var(--color-views)" radius={4} />
+        <Bar dataKey="views" fill="var(--color-views)" radius={4} barSize={20} />
       </BarChart>
     </ChartContainer>
   );
