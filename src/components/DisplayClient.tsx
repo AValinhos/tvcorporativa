@@ -65,7 +65,7 @@ const getPlaylistByDeviceId = (deviceId: string, allData: { mediaItems: MediaIte
 }
 
 
-const trackExposure = async (payload: { mediaId?: string, deviceId?: string }) => {
+const trackExposure = async (payload: { mediaId: string }) => {
     try {
         await fetch('/api/exposure', {
             method: 'POST',
@@ -157,17 +157,11 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
   
   React.useEffect(() => {
     if (deviceId) {
-        // 1. Primeiro registro na abertura da tela.
-        trackExposure({ deviceId });
         updateAnalytics();
-      
-        // 2. Registros subsequentes a cada hora.
         const hourlyTimer = setInterval(() => {
-             trackExposure({ deviceId });
              updateAnalytics();
         }, 3600 * 1000); // 1 hora
       
-        // Limpa o timer quando o componente é desmontado.
         return () => clearInterval(hourlyTimer);
     }
   }, [deviceId]);
@@ -185,6 +179,9 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
         const allData = await res.json();
         const foundPlaylist = getPlaylistByDeviceId(deviceId, allData);
         setPlaylist(foundPlaylist);
+        if (foundPlaylist && foundPlaylist.items.length > 0) {
+            trackExposure({ mediaId: foundPlaylist.items[0].id });
+        }
       } catch (error) {
         console.error("Falha ao carregar playlist", error);
         setPlaylist(null);
