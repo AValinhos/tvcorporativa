@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2, PlayCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check, ChevronsUpDown } from 'lucide-react';
@@ -151,7 +151,9 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                     : [...currentDeviceIds, deviceId];
                 return { ...p, deviceIds: newDeviceIds };
             }
-            return p;
+            // For other playlists, ensure this deviceId is removed if it exists
+            const filteredDeviceIds = p.deviceIds ? p.deviceIds.filter(id => id !== deviceId) : [];
+            return { ...p, deviceIds: filteredDeviceIds };
         })
     );
   }
@@ -274,6 +276,8 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
   const availableMedia = mediaItems.filter(
     media => !selectedPlaylist?.items.some(item => item.mediaId === media.id)
   ) || [];
+  
+  const devicesForSelectedPlaylist = selectedPlaylist?.deviceIds || [];
 
   return (
     <Card className={cn(className)}>
@@ -305,8 +309,8 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                         className="w-[250px] justify-between"
                         disabled={!selectedPlaylist}
                     >
-                       {selectedPlaylist?.deviceIds?.length > 0
-                        ? `${selectedPlaylist.deviceIds.length} dispositivo(s) selecionado(s)`
+                       {devicesForSelectedPlaylist.length > 0
+                        ? `${devicesForSelectedPlaylist.length} dispositivo(s) selecionado(s)`
                         : "Associar a Dispositivos"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -324,7 +328,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                                   <Check
                                     className={cn(
                                         "mr-2 h-4 w-4",
-                                        selectedPlaylist?.deviceIds?.includes(device.id) ? "opacity-100" : "opacity-0"
+                                        devicesForSelectedPlaylist.includes(device.id) ? "opacity-100" : "opacity-0"
                                     )}
                                    />
                                    {device.name}
@@ -442,10 +446,10 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Salvar Playlist
         </Button>
-        {selectedPlaylist && selectedPlaylist.deviceIds && selectedPlaylist.deviceIds.length > 0 && (
-            <Link href={`/display/${selectedPlaylist.deviceIds[0]}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline hover:text-primary/80 flex items-center gap-1.5">
+        {selectedPlaylist && devicesForSelectedPlaylist.length > 0 && (
+            <Link href={`/display/${devicesForSelectedPlaylist[0]}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline hover:text-primary/80 flex items-center gap-1.5">
                 <PlayCircle className="h-4 w-4" />
-                Visualizar em: /display/{selectedPlaylist.deviceIds[0]}
+                Visualizar em: /display/{devicesForSelectedPlaylist[0]}
             </Link>
         )}
       </CardFooter>

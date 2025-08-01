@@ -12,10 +12,15 @@ async function readData() {
   try {
     const fileContent = await fs.readFile(dataFilePath, 'utf-8');
     const data = JSON.parse(fileContent);
-    // Initialize devices array if it doesn't exist
+    // Initialize devices and deviceIds on playlists if they don't exist
     if (!data.devices) {
       data.devices = [];
     }
+    data.playlists.forEach((p: any) => {
+        if (!p.deviceIds) {
+            p.deviceIds = [];
+        }
+    });
     return data;
   } catch (error) {
     console.error('Error reading data file:', error);
@@ -97,7 +102,13 @@ export async function POST(req: NextRequest) {
       const newPlaylist = { ...body.payload, id: newId, deviceIds: [] }
       data.playlists.push(newPlaylist);
     } else if (body.action === 'UPDATE_PLAYLIST') {
-        data.playlists = data.playlists.map((p:any) => p.id === body.payload.id ? { ...p, ...body.payload.updates } : p);
+        data.playlists = data.playlists.map((p:any) => {
+            if (p.id === body.payload.id) {
+                // Merge updates, ensuring deviceIds from the original is kept if not in updates
+                return { ...p, ...body.payload.updates };
+            }
+            return p;
+        });
         analyticsShouldUpdate = true;
     } else if (body.action === 'DELETE_PLAYLIST') {
         const playlistToDelete = data.playlists.find((p:any) => p.id === body.payload.id);
