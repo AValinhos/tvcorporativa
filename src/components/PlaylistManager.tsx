@@ -142,21 +142,33 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
   
   const handleDeviceSelection = (deviceId: string) => {
     if (!selectedPlaylistId) return;
-    setCurrentPlaylists(prevPlaylists =>
-        prevPlaylists.map(p => {
-            if (p.id === selectedPlaylistId) {
-                const currentDeviceIds = p.deviceIds || [];
-                const newDeviceIds = currentDeviceIds.includes(deviceId)
-                    ? currentDeviceIds.filter(id => id !== deviceId)
-                    : [...currentDeviceIds, deviceId];
-                return { ...p, deviceIds: newDeviceIds };
-            }
-            // For other playlists, ensure this deviceId is removed if it exists
-            const filteredDeviceIds = p.deviceIds ? p.deviceIds.filter(id => id !== deviceId) : [];
-            return { ...p, deviceIds: filteredDeviceIds };
-        })
-    );
+
+    setCurrentPlaylists(prevPlaylists => {
+      // Create a deep copy to avoid direct state mutation
+      const newPlaylists = JSON.parse(JSON.stringify(prevPlaylists));
+
+      // Find the playlist to update and others to clean
+      const playlistToUpdate = newPlaylists.find((p: Playlist) => p.id === selectedPlaylistId);
+      if (!playlistToUpdate) return prevPlaylists;
+
+      const currentDeviceIds = playlistToUpdate.deviceIds || [];
+      const isDeviceSelected = currentDeviceIds.includes(deviceId);
+
+      // Add or remove from the selected playlist
+      playlistToUpdate.deviceIds = isDeviceSelected
+        ? currentDeviceIds.filter((id: string) => id !== deviceId)
+        : [...currentDeviceIds, deviceId];
+
+      // Remove from any other playlist
+      return newPlaylists.map((p: Playlist) => {
+        if (p.id !== selectedPlaylistId && p.deviceIds?.includes(deviceId)) {
+          p.deviceIds = p.deviceIds.filter((id: string) => id !== deviceId);
+        }
+        return p;
+      });
+    });
   }
+
 
   const updatePlaylistInState = (updatedPlaylist: Playlist) => {
       const updatedPlaylists = currentPlaylists.map(p => p.id === updatedPlaylist.id ? updatedPlaylist : p);

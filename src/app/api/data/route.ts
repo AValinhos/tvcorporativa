@@ -102,10 +102,22 @@ export async function POST(req: NextRequest) {
       const newPlaylist = { ...body.payload, id: newId, deviceIds: [] }
       data.playlists.push(newPlaylist);
     } else if (body.action === 'UPDATE_PLAYLIST') {
+        const { id, updates } = body.payload;
         data.playlists = data.playlists.map((p:any) => {
-            if (p.id === body.payload.id) {
-                // Merge updates, ensuring deviceIds from the original is kept if not in updates
-                return { ...p, ...body.payload.updates };
+            if (p.id === id) {
+                // Ensure deviceIds are merged, not overwritten, if not in updates
+                const finalUpdates = { ...updates };
+                if (updates.deviceIds === undefined) {
+                    finalUpdates.deviceIds = p.deviceIds || [];
+                }
+                return { ...p, ...finalUpdates };
+            }
+             // Remove the device from any other playlist that might have it
+            if (updates.deviceIds && updates.deviceIds.length > 0) {
+              const deviceIdToAssign = updates.deviceIds[updates.deviceIds.length - 1];
+              if (p.deviceIds && p.deviceIds.includes(deviceIdToAssign)) {
+                  p.deviceIds = p.deviceIds.filter((dId: string) => dId !== deviceIdToAssign);
+              }
             }
             return p;
         });
