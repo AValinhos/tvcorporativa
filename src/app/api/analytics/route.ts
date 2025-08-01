@@ -28,14 +28,13 @@ interface Device {
 async function readAnalyticsData(): Promise<AnalyticsDataPoint[]> {
   try {
     const fileContent = await fs.readFile(analyticsFilePath, 'utf-8');
-    // Remove duplicates
     const data = JSON.parse(fileContent) as AnalyticsDataPoint[];
-    const uniqueData = data.filter((item, index, self) =>
-        index === self.findIndex((t) => (
-            t.date === item.date
-        ))
-    );
-    return uniqueData;
+    // Remove duplicates by creating a map
+    const uniqueDataMap = new Map<string, AnalyticsDataPoint>();
+    data.forEach(item => {
+        uniqueDataMap.set(item.date, item);
+    });
+    return Array.from(uniqueDataMap.values());
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return [];
@@ -76,33 +75,42 @@ export async function POST(req: NextRequest) {
     const allData = await readDataFile();
     const playlists: Playlist[] = allData.playlists || [];
     const devices: Device[] = allData.devices || [];
-    const analyticsData = await readAnalyticsData();
+    const existingAnalyticsData = await readAnalyticsData();
     
-    // Use UTC date to avoid timezone issues
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    const last30Days: { [date: string]: AnalyticsDataPoint } = {};
+    // 1. Create a clean map of the last 30 days with initial zeroed data
+    const last30DaysMap = new Map<string, AnalyticsDataPoint>();
     const allDeviceNames = new Set(devices.map(d => d.name));
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 29; i >= 0; i--) {
         const date = new Date(today);
         date.setUTCDate(today.getUTCDate() - i);
         const dateString = date.toISOString().split('T')[0];
+        
         const initialData: AnalyticsDataPoint = { date: dateString };
         allDeviceNames.forEach(name => initialData[name] = 0);
-        last30Days[dateString] = initialData;
+        last30DaysMap.set(dateString, initialData);
     }
     
-    analyticsData.forEach(d => {
-        if (last30Days[d.date]) {
-            last30Days[d.date] = { ...last30Days[d.date], ...d };
+    // 2. Populate the map with existing data
+    existingAnalyticsData.forEach(d => {
+        if (last30DaysMap.has(d.date)) {
+            // Merge existing data, keeping the structure from the map
+            const dayData = last30DaysMap.get(d.date)!;
+            Object.keys(d).forEach(key => {
+                if (key !== 'date') {
+                    dayData[key] = d[key];
+                }
+            });
         }
     });
     
+    // 3. Calculate today's duration and update the map
     const todayString = today.toISOString().split('T')[0];
-
     const dailyDurations: { [key: string]: any } = { date: todayString };
+
     devices.forEach(device => {
         const playlist = playlists.find(p => p.id === device.playlistId);
         if(playlist) {
@@ -113,20 +121,16 @@ export async function POST(req: NextRequest) {
         }
     });
 
-    if(last30Days[todayString]) {
-       last30Days[todayString] = { ...last30Days[todayString], ...dailyDurations };
+    if(last30DaysMap.has(todayString)) {
+       const todayData = last30DaysMap.get(todayString)!;
+       last30DaysMap.set(todayString, { ...todayData, ...dailyDurations });
     }
 
-
-    const finalAnalyticsData = Object.values(last30Days).sort(
+    // 4. Convert map to array and sort
+    const finalAnalyticsData = Array.from(last30DaysMap.values()).sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
     
-    if (finalAnalyticsData.length > 30) {
-        finalAnalyticsData.splice(0, finalAnalyticsData.length - 30);
-    }
-
-
     await writeAnalyticsData(finalAnalyticsData);
     return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: finalAnalyticsData }, { status: 200 });
   } catch (error: any) {
