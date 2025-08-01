@@ -452,9 +452,9 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
           Salvar Playlist
         </Button>
         {devicesForSelectedPlaylist.length > 0 && (
-            <a href={`/display/${devicesForSelectedPlaylist[0]}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                /display/{devicesForSelectedPlaylist[0]}
-            </a>
+            <Link href={`/display/${devicesForSelectedPlaylist[0]}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                URL de Exibição: /display/{devicesForSelectedPlaylist[0]}
+            </Link>
         )}
       </CardFooter>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
