@@ -304,7 +304,82 @@ export default function SettingsPage() {
 
   return (
     <main className="flex-1 p-4 md:p-8">
-      <div className="grid gap-6 mb-6">
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Exportar Backup</CardTitle>
+            <CardDescription>
+              Faça o download de um backup de seus dados em um arquivo JSON.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+             <Select value={exportType} onValueChange={(v) => setExportType(v as BackupType)}>
+                <SelectTrigger className="w-full sm:w-[280px]">
+                    <SelectValue placeholder="Selecione o tipo de backup" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="content">Conteúdo (Mídias, Playlists, Dispositivos)</SelectItem>
+                    <SelectItem value="visualization">Dados de Visualização</SelectItem>
+                </SelectContent>
+            </Select>
+            <Button onClick={handleExport} disabled={isExporting}>
+              {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              {isExporting ? 'Exportando...' : 'Exportar Dados'}
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Importar Backup</CardTitle>
+            <CardDescription>
+              Importe um arquivo de backup JSON para restaurar seus dados. Atenção: isso substituirá os dados existentes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label className="mb-2 block">Tipo de Backup a Importar</Label>
+              <RadioGroup defaultValue="content" value={importType} onValueChange={(v) => setImportType(v as BackupType)}>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="content" id="r1" />
+                      <Label htmlFor="r1">Conteúdo</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="visualization" id="r2" />
+                      <Label htmlFor="r2">Visualização</Label>
+                  </div>
+              </RadioGroup>
+            </div>
+
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="backup-file">Arquivo de Backup (.json)</Label>
+              <Input id="backup-file" type="file" accept=".json" onChange={handleFileChange} ref={fileInputRef} />
+            </div>
+            <Button onClick={handleImportClick} disabled={isImporting || !selectedFile}>
+               {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+               {isImporting ? 'Importando...' : 'Importar Dados'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+       <div className="grid gap-6 mb-6">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Gerenciamento de Dados</CardTitle>
+                  <CardDescription>Ações perigosas relacionadas aos dados da aplicação.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <Button variant="destructive" onClick={() => setIsClearDataDialogOpen(true)}>
+                      <ShieldX className="mr-2 h-4 w-4" /> Limpar Dados de Visualização
+                  </Button>
+                   <p className="text-sm text-muted-foreground mt-2">
+                      Isso irá apagar permanentemente todos os dados de analytics e de exposição de mídia. Use com cuidado.
+                  </p>
+              </CardContent>
+          </Card>
+      </div>
+      
+       <div className="grid gap-6 mb-6">
           <Card>
               <CardHeader>
                   <div className="flex justify-between items-center">
@@ -364,82 +439,6 @@ export default function SettingsPage() {
                           </TableBody>
                       </Table>
                    )}
-              </CardContent>
-          </Card>
-      </div>
-
-
-      <div className="grid gap-6 md:grid-cols-2 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Exportar Backup</CardTitle>
-            <CardDescription>
-              Faça o download de um backup de seus dados em um arquivo JSON.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <Select value={exportType} onValueChange={(v) => setExportType(v as BackupType)}>
-                <SelectTrigger className="w-full sm:w-[280px]">
-                    <SelectValue placeholder="Selecione o tipo de backup" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="content">Conteúdo (Mídias, Playlists, Dispositivos)</SelectItem>
-                    <SelectItem value="visualization">Dados de Visualização</SelectItem>
-                </SelectContent>
-            </Select>
-            <Button onClick={handleExport} disabled={isExporting}>
-              {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-              {isExporting ? 'Exportando...' : 'Exportar Dados'}
-            </Button>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Importar Backup</CardTitle>
-            <CardDescription>
-              Importe um arquivo de backup JSON para restaurar seus dados. Atenção: isso substituirá os dados existentes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label className="mb-2 block">Tipo de Backup a Importar</Label>
-              <RadioGroup defaultValue="content" value={importType} onValueChange={(v) => setImportType(v as BackupType)}>
-                  <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="content" id="r1" />
-                      <Label htmlFor="r1">Conteúdo</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="visualization" id="r2" />
-                      <Label htmlFor="r2">Visualização</Label>
-                  </div>
-              </RadioGroup>
-            </div>
-
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="backup-file">Arquivo de Backup (.json)</Label>
-              <Input id="backup-file" type="file" accept=".json" onChange={handleFileChange} ref={fileInputRef} />
-            </div>
-            <Button onClick={handleImportClick} disabled={isImporting || !selectedFile}>
-               {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-               {isImporting ? 'Importando...' : 'Importar Dados'}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 mb-6">
-          <Card>
-              <CardHeader>
-                  <CardTitle>Gerenciamento de Dados</CardTitle>
-                  <CardDescription>Ações perigosas relacionadas aos dados da aplicação.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <Button variant="destructive" onClick={() => setIsClearDataDialogOpen(true)}>
-                      <ShieldX className="mr-2 h-4 w-4" /> Limpar Dados de Visualização
-                  </Button>
-                   <p className="text-sm text-muted-foreground mt-2">
-                      Isso irá apagar permanentemente todos os dados de analytics e de exposição de mídia. Use com cuidado.
-                  </p>
               </CardContent>
           </Card>
       </div>

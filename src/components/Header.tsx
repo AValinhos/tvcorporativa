@@ -17,6 +17,15 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
 
 interface HeaderProps {
     searchQuery?: string;
@@ -89,7 +98,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
       </Sheet>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4 justify-end">
         {setSearchQuery && (
-          <form className="flex-1 sm:flex-initial">
+          <form className="flex-1 sm:flex-initial" onSubmit={(e) => e.preventDefault()}>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -102,22 +111,36 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
             </div>
           </form>
         )}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <CircleUser className="h-5 w-5" />
-              <span className="sr-only">Alternar menu de usuário</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <Link href="/settings"><DropdownMenuItem>Configurações</DropdownMenuItem></Link>
-            <DropdownMenuItem>Suporte</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Dialog>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <CircleUser className="h-5 w-5" />
+                <span className="sr-only">Alternar menu de usuário</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <Link href="/settings"><DropdownMenuItem>Configurações</DropdownMenuItem></Link>
+               <DialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Suporte</DropdownMenuItem>
+                </DialogTrigger>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Suporte Técnico</DialogTitle>
+              <DialogDescription>
+                Para obter ajuda, por favor, abra um chamado com nossa equipe de suporte. Eles irão auxiliá-lo com qualquer problema ou dúvida que você tenha.
+                <p className='mt-4'>Aguarde o contato do suporte técnico.</p>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </header>
   )
