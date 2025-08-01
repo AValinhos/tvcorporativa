@@ -22,7 +22,6 @@ async function readAnalyticsData(): Promise<AnalyticsDataPoint[]> {
     const fileContent = await fs.readFile(analyticsFilePath, 'utf-8');
     return JSON.parse(fileContent);
   } catch (error) {
-    // Se o arquivo não existir, retorne um array vazio
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return [];
     }
@@ -65,28 +64,36 @@ export async function POST(req: NextRequest) {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // Calcula a duração total para cada playlist
-    const dailyDurations: { [key: string]: any } = { date: today };
-    playlists.forEach(playlist => {
-      const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
-      dailyDurations[playlist.name] = Math.ceil(totalDurationSeconds / 60); // Convertendo para minutos
-    });
-
-    // Encontra se já existe um registro para o dia de hoje
+    // Verifica se já existe um registro para o dia de hoje
     const todayIndex = analyticsData.findIndex(d => d.date === today);
 
+    // Se já existe um registro para hoje e não estamos forçando uma atualização, podemos retornar.
+    // Ou, podemos sempre recalcular e sobrescrever para garantir os dados mais recentes do dia.
+    // Vamos adotar a abordagem de apenas adicionar se não existir para evitar múltiplas escritas.
     if (todayIndex > -1) {
-      // Atualiza o registro existente
+      // Opcional: Atualizar o registro existente em vez de pular.
+      // Por agora, vamos apenas adicionar se não existir para simplificar.
+      const dailyDurations: { [key: string]: any } = { date: today };
+      playlists.forEach(playlist => {
+          const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
+          dailyDurations[playlist.name] = Math.ceil(totalDurationSeconds / 60);
+      });
       analyticsData[todayIndex] = { ...analyticsData[todayIndex], ...dailyDurations };
     } else {
+       // Calcula a duração total para cada playlist
+      const dailyDurations: { [key: string]: any } = { date: today };
+      playlists.forEach(playlist => {
+        const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
+        dailyDurations[playlist.name] = Math.ceil(totalDurationSeconds / 60); // Convertendo para minutos
+      });
       // Adiciona um novo registro
       analyticsData.push(dailyDurations);
     }
     
-    // Mantém apenas os últimos 30 dias, por exemplo
-    if(analyticsData.length > 30) {
-        analyticsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        analyticsData.splice(30);
+    // Ordena por data e mantém apenas os últimos 30 dias
+    analyticsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    if (analyticsData.length > 30) {
+        analyticsData.splice(0, analyticsData.length - 30);
     }
 
 

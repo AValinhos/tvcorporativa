@@ -180,26 +180,20 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Apenas aciona a coleta de dados uma vez.
+    // A API agora é inteligente o suficiente para não duplicar entradas para o mesmo dia.
+    fetch('/api/analytics', { method: 'POST' })
+      .then(() => {
+        // Após a tentativa de atualização, busca todos os dados.
+        fetchData();
+      })
+      .catch(err => {
+        console.error("Falha ao acionar a atualização de analytics:", err);
+        // Mesmo se a atualização falhar, busca os dados existentes.
+        fetchData();
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const lastUpdate = localStorage.getItem('lastAnalyticsUpdate');
-
-    if (lastUpdate !== today && !isLoading) {
-        fetch('/api/analytics', { method: 'POST' })
-            .then(res => {
-                if (res.ok) {
-                    localStorage.setItem('lastAnalyticsUpdate', today);
-                    fetchData(); 
-                }
-            })
-            .catch(err => console.error("Falha ao atualizar analytics:", err));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading]);
 
 
   const { totalExposedItems, mostViewedItemName } = useMemo(() => {
