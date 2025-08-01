@@ -8,9 +8,13 @@ import ContentUploader from '@/components/ContentUploader';
 import MediaManager from '@/components/MediaManager';
 import PlaylistManager from '@/components/PlaylistManager';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { BarChart, Tv, Clapperboard, ListMusic, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BarChart, Tv, Clapperboard, ListMusic, Loader2, ArrowRight } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import Link from 'next/link';
+
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -142,6 +146,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+interface ExposureStats {
+    playlistId: string;
+    playlistName: string;
+    exposedItemsCount: number;
+    mostViewedItem: {
+        name: string;
+        views: number;
+    } | null;
+}
+
 export default function Dashboard() {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -154,23 +168,19 @@ export default function Dashboard() {
     try {
       if (!isLoading) setIsLoading(true);
       
-      // Fetch all primary data
       const res = await fetch('/api/data');
       if (!res.ok) throw new Error('Falha ao buscar dados');
       const data = await res.json();
       setMediaItems(data.mediaItems || []);
       setPlaylists(data.playlists || []);
       
-      // Fetch analytics data
       const analyticsRes = await fetch('/api/analytics');
       if(analyticsRes.ok) {
         const analytics = await analyticsRes.json();
-        // Ensure data is sorted by date for the chart
         analytics.sort((a: AnalyticsDataPoint, b: AnalyticsDataPoint) => new Date(a.date).getTime() - new Date(b.date).getTime());
         setAnalyticsData(analytics);
       }
       
-      // Fetch exposure data
       const exposureRes = await fetch('/api/exposure');
       if (exposureRes.ok) {
           const exposure = await exposureRes.json();
@@ -185,37 +195,40 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    // Initial data fetch when component mounts.
-    // The analytics update is now handled by the /api/data endpoint
-    // when playlists are modified.
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
-  const { totalExposedItems, mostViewedItemName } = useMemo(() => {
-    if (isLoading || !exposureData || !mediaItems || mediaItems.length === 0) {
-      return { totalExposedItems: 0, mostViewedItemName: 'N/A' };
+  const exposureStatsPerPlaylist: ExposureStats[] = useMemo(() => {
+    if (isLoading || !exposureData || !playlists.length || !mediaItems.length) {
+      return [];
     }
 
-    const exposedItemsCount = Object.keys(exposureData).length;
-
-    let mostViewedId = '';
-    let maxExposure = 0;
-    for (const mediaId in exposureData) {
-        if (exposureData[mediaId] > maxExposure) {
-            maxExposure = exposureData[mediaId];
-            mostViewedId = mediaId;
+    return playlists.map(playlist => {
+      const playlistMediaIds = new Set(playlist.items.map(item => item.mediaId));
+      const exposedItemsInPlaylist = Object.keys(exposureData).filter(mediaId => playlistMediaIds.has(mediaId));
+      
+      let mostViewedItem: ExposureStats['mostViewedItem'] = null;
+      if(exposedItemsInPlaylist.length > 0) {
+        const mostViewedId = exposedItemsInPlaylist.reduce((a, b) => exposureData[a] > exposureData[b] ? a : b);
+        const mediaItem = mediaItems.find(item => item.id === mostViewedId);
+        if(mediaItem) {
+            mostViewedItem = {
+                name: mediaItem.name,
+                views: exposureData[mostViewedId]
+            }
         }
-    }
-    
-    const mostViewedItem = mediaItems.find(item => item.id === mostViewedId);
-    
-    return {
-      totalExposedItems: exposedItemsCount,
-      mostViewedItemName: mostViewedItem ? mostViewedItem.name : "Nenhum",
-    };
-  }, [exposureData, mediaItems, isLoading]);
+      }
+
+      return {
+        playlistId: playlist.id,
+        playlistName: playlist.name,
+        exposedItemsCount: exposedItemsInPlaylist.length,
+        mostViewedItem,
+      };
+    });
+  }, [playlists, mediaItems, exposureData, isLoading]);
 
   const filteredMediaItems = useMemo(() => {
     if (!searchQuery) return mediaItems;
@@ -233,7 +246,7 @@ export default function Dashboard() {
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
         <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Telas Totais</CardTitle>
@@ -254,7 +267,7 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">Total de itens na biblioteca.</p>
               </CardContent>
             </Card>
-            <Card>
+             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Playlists</CardTitle>
                 <ListMusic className="h-4 w-4 text-muted-foreground" />
@@ -264,54 +277,108 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">Total de playlists criadas.</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Exposição de Conteúdo</CardTitle>
-                <BarChart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : totalExposedItems}</div>
-                <p className="text-xs text-muted-foreground">Mais visto: "{mostViewedItemName}"</p>
-              </CardContent>
-            </Card>
           </div>
 
-          <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
               <ContentUploader onContentSaved={fetchData} />
+              
+              <Card className="lg:col-span-3">
+                 <CardHeader>
+                    <CardTitle>Exposição de Conteúdo por Playlist</CardTitle>
+                    <CardDescription>Métricas de visualização para cada uma das suas telas.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                     <div className="flex h-40 w-full items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                     </div>
+                  ) : exposureStatsPerPlaylist.length > 0 ? (
+                    <Carousel
+                      opts={{
+                        align: "start",
+                      }}
+                      className="w-full"
+                    >
+                      <CarouselContent>
+                        {exposureStatsPerPlaylist.map((stats) => (
+                          <CarouselItem key={stats.playlistId} className="md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1">
+                              <Card>
+                                <CardHeader>
+                                  <CardTitle className="truncate text-lg">{stats.playlistName}</CardTitle>
+                                  <CardDescription>{stats.exposedItemsCount} itens expostos</CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex h-24 flex-col justify-center">
+                                  {stats.mostViewedItem ? (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Mais Visto:</p>
+                                      <p className="font-semibold truncate">{stats.mostViewedItem.name}</p>
+                                      <p className="text-sm text-muted-foreground">{stats.mostViewedItem.views} visualizações</p>
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">Nenhuma exposição registrada.</p>
+                                  )}
+                                </CardContent>
+                                <CardContent className="p-4 pt-0">
+                                   <Link href={`/display/${stats.playlistId}`} target="_blank" className='w-full'>
+                                    <Button size="sm" className="w-full">
+                                      Ver Tela
+                                      <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                  </Link>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </Carousel>
+                  ) : (
+                     <div className="flex h-40 w-full items-center justify-center rounded-md border-2 border-dashed">
+                        <p className="text-muted-foreground">Crie playlists para ver as métricas de exposição.</p>
+                     </div>
+                  )}
+                </CardContent>
+              </Card>
+
+          </div>
+          
+           <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
+              <MediaManager mediaItems={filteredMediaItems} onMediaUpdate={fetchData} isLoading={isLoading}/>
+          </div>
+
+           <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
               <PlaylistManager 
                 mediaItems={mediaItems} 
                 playlists={filteredPlaylists} 
                 onPlaylistUpdate={fetchData}
                 isLoading={isLoading}
               />
-          </div>
-          
-           <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
-              <MediaManager mediaItems={filteredMediaItems} onMediaUpdate={fetchData} isLoading={isLoading}/>
-          </div>
-          
-          <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
-             <Card>
-              <CardHeader>
-                <CardTitle>Evolução do Tempo de Uso</CardTitle>
-                <CardDescription>Tempo de exibição total por playlist (em minutos) nos últimos dias.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                 {isLoading ? (
-                  <div className="flex h-80 w-full items-center justify-center">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <AnalyticsChart 
-                    analyticsData={analyticsData} 
-                    playlists={playlists}
-                  />
-                )}
-              </CardContent>
-            </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Evolução do Tempo de Uso</CardTitle>
+                  <CardDescription>Tempo de exibição total por playlist (em minutos) nos últimos dias.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="flex h-80 w-full items-center justify-center">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <AnalyticsChart 
+                      analyticsData={analyticsData} 
+                      playlists={playlists}
+                    />
+                  )}
+                </CardContent>
+              </Card>
           </div>
         </main>
       </div>
     </AuthGuard>
   );
 }
+
