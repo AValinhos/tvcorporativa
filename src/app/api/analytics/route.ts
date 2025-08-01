@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     analyticsData.push(newDatapoint);
     
     await writeAnalyticsData(analyticsData);
-    return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: analyticsData }, { status: 200 });
+    return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: newDatapoint }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ message: 'Erro ao atualizar dados de analytics', error: error.message }, { status: 500 });
   }

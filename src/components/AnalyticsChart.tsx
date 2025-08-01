@@ -63,12 +63,12 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
     const thirtyDaysAgo = subDays(now, 30);
 
     const filteredData = analyticsData.filter(d => {
-        const recordDate = new Date(`${d.date}T${d.time}`);
+        const recordDate = new Date(`${d.date}T${d.time || '00:00:00'}`);
         return recordDate >= thirtyDaysAgo && recordDate <= now;
     }).map(d => ({
         ...d,
         fullDate: `${d.date} ${d.time}`,
-        formattedTime: format(new Date(`${d.date}T${d.time}`), "dd/MM HH:mm")
+        formattedTime: format(new Date(`${d.date}T${d.time || '00:00:00'}`), "dd/MM HH:mm")
     }));
     
     const config: ChartConfig = {};
