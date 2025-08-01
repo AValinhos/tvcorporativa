@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import AnalyticsChart from '@/components/AnalyticsChart';
+
 import {
   Table,
   TableBody,
@@ -57,6 +59,11 @@ interface Playlist {
   name: string;
 }
 
+interface AnalyticsDataPoint {
+  date: string;
+  [key: string]: any;
+}
+
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -78,6 +85,8 @@ export default function SettingsPage() {
   const [deviceName, setDeviceName] = useState('');
   const [devicePlaylistId, setDevicePlaylistId] = useState('');
   const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsDataPoint[]>([]);
+
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -91,6 +100,7 @@ export default function SettingsPage() {
         const data = await res.json();
         setDevices(data.devices || []);
         setPlaylists(data.playlists || []);
+        setAnalyticsData(data.analyticsData || []);
     } catch (error) {
         toast({ variant: 'destructive', title: 'Erro', description: (error as Error).message });
     } finally {
@@ -268,6 +278,10 @@ export default function SettingsPage() {
   return (
       <main className="flex-1 p-4 md:p-8">
         <h1 className="text-2xl font-bold mb-6">Configurações</h1>
+
+        <div className="grid gap-6 mb-8">
+            <AnalyticsChart analyticsData={analyticsData} />
+        </div>
 
         <div className="grid gap-6 mb-6">
             <Card>
