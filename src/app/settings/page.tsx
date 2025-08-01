@@ -279,10 +279,6 @@ export default function SettingsPage() {
       <main className="flex-1 p-4 md:p-8">
         <h1 className="text-2xl font-bold mb-6">Configurações</h1>
 
-        <div className="grid gap-6 mb-8">
-            <AnalyticsChart analyticsData={analyticsData} />
-        </div>
-
         <div className="grid gap-6 mb-6">
             <Card>
                 <CardHeader>
@@ -348,7 +344,7 @@ export default function SettingsPage() {
         </div>
 
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Exportar Backup</CardTitle>
@@ -405,6 +401,11 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
+
+        <div className="grid gap-6">
+            <AnalyticsChart analyticsData={analyticsData} />
+        </div>
+
 
         <Dialog open={isDeviceDialogOpen} onOpenChange={setIsDeviceDialogOpen}>
             <DialogContent>

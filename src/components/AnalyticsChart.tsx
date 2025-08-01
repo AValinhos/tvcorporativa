@@ -1,6 +1,6 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { useMemo } from 'react';
@@ -62,7 +62,7 @@ export default function AnalyticsChart({ analyticsData, className }: AnalyticsCh
       <CardContent>
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
             <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={chartData}>
+                <LineChart data={chartData}>
                     <CartesianGrid vertical={false} />
                     <XAxis
                         dataKey="date"
@@ -75,9 +75,9 @@ export default function AnalyticsChart({ analyticsData, className }: AnalyticsCh
                     <Tooltip content={<ChartTooltipContent />} />
                     <Legend />
                     {deviceKeys.map((key) => (
-                        <Bar key={key} dataKey={key} fill={chartConfig[key].color} radius={4} />
+                        <Line key={key} type="monotone" dataKey={key} stroke={chartConfig[key].color} strokeWidth={2} dot={false} />
                     ))}
-                </BarChart>
+                </LineChart>
             </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
