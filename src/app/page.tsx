@@ -144,13 +144,13 @@ export default function Dashboard() {
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <div className="grid gap-2 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Telas Totais</CardTitle>
               <Tv className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8 pt-0">
               <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : devices.length}</div>
               <p className="text-xs text-muted-foreground">Total de dispositivos configurados.</p>
             </CardContent>
@@ -160,7 +160,7 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium">Itens de Mídia</CardTitle>
               <Clapperboard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8 pt-0">
               <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : mediaItems.length}</div>
               <p className="text-xs text-muted-foreground">Total de itens na biblioteca.</p>
             </CardContent>
@@ -170,7 +170,7 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium">Playlists</CardTitle>
               <ListMusic className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-8 pt-0">
               <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : playlists.length}</div>
               <p className="text-xs text-muted-foreground">Total de playlists criadas.</p>
             </CardContent>
