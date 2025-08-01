@@ -16,19 +16,22 @@ import { Label } from "@/components/ui/label"
 import { Tv } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import data from '@/lib/data.json';
+import { useAuth } from "@/components/AuthProvider";
 
 export default function LoginPage() {
   const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
   const { toast } = useToast();
+  const { login } = useAuth();
+
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const foundUser = data.users.find(u => u.user === user && u.password === password);
 
     if (foundUser) {
-      localStorage.setItem('isAuthenticated', 'true');
+      login();
       router.push('/');
     } else {
       toast({
