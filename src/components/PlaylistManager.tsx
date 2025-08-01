@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2, PlayCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check, ChevronsUpDown } from 'lucide-react';
+import Link from 'next/link';
 
 import {
   Dialog,
@@ -328,6 +329,14 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                    </Command>
                 </PopoverContent>
             </Popover>
+
+            {selectedPlaylist && selectedPlaylist.deviceIds && selectedPlaylist.deviceIds.length > 0 && (
+                <Link href={`/display/${selectedPlaylist.deviceIds[0]}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer">
+                    <Button variant="ghost" size="icon">
+                        <PlayCircle className="h-5 w-5 text-primary hover:text-primary/80" />
+                    </Button>
+                </Link>
+            )}
 
 
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
