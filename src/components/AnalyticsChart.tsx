@@ -1,9 +1,11 @@
+
 'use client';
 
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface AnalyticsDataPoint {
   date: string;
@@ -11,42 +13,82 @@ interface AnalyticsDataPoint {
 }
 
 interface AnalyticsChartProps {
-  analyticsData: AnalyticsDataPoint[];
   className?: string;
 }
 
-// Helper to generate a random HSL color
 const generateHslColor = (index: number) => {
     const hue = (index * 137.508) % 360; 
     return `hsl(${hue}, 50%, 60%)`;
 }
 
 
-export default function AnalyticsChart({ analyticsData, className }: AnalyticsChartProps) {
+export default function AnalyticsChart({ className }: AnalyticsChartProps) {
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsDataPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/analytics');
+            if (!res.ok) throw new Error('Falha ao buscar dados de analytics');
+            const data = await res.json();
+            setAnalyticsData(data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchData();
+  }, []);
+
   const { chartData, chartConfig } = useMemo(() => {
     if (!analyticsData || analyticsData.length === 0) {
       return { chartData: [], chartConfig: {} };
     }
-    
-    // Format date for display
-    const formattedData = analyticsData.map(d => ({
-        ...d,
-        date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-    }));
 
-    // Get all unique device names from the data
-    const deviceKeys = Array.from(new Set(analyticsData.flatMap(d => Object.keys(d).filter(key => key !== 'date'))));
+    const today = new Date();
+    const last30Days: AnalyticsDataPoint[] = [];
+    const allDeviceKeys = new Set<string>();
+
+    // First pass to get all possible device names
+    analyticsData.forEach(d => {
+        Object.keys(d).forEach(key => {
+            if (key !== 'date') {
+                allDeviceKeys.add(key);
+            }
+        });
+    });
+
+    const dataMap = new Map(analyticsData.map(d => [d.date, d]));
+
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        
+        const dayData = dataMap.get(dateString);
+        const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        
+        const dataPoint: AnalyticsDataPoint = { date: formattedDate };
+        
+        allDeviceKeys.forEach(key => {
+            dataPoint[key] = dayData?.[key] || 0;
+        });
+
+        last30Days.push(dataPoint);
+    }
     
-    // Create chart config for colors and labels
     const config: ChartConfig = {};
-    deviceKeys.forEach((key, index) => {
+    Array.from(allDeviceKeys).forEach((key, index) => {
         config[key] = {
             label: key,
             color: generateHslColor(index),
         }
     });
 
-    return { chartData: formattedData, chartConfig: config };
+    return { chartData: last30Days, chartConfig: config };
 
   }, [analyticsData]);
   
@@ -60,6 +102,11 @@ export default function AnalyticsChart({ analyticsData, className }: AnalyticsCh
         <CardDescription>Tempo de uso diário (em minutos) por dispositivo.</CardDescription>
       </CardHeader>
       <CardContent>
+       {isLoading ? (
+          <div className="flex justify-center items-center min-h-[350px]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
             <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={chartData}>
@@ -75,11 +122,12 @@ export default function AnalyticsChart({ analyticsData, className }: AnalyticsCh
                     <Tooltip content={<ChartTooltipContent />} />
                     <Legend />
                     {deviceKeys.map((key) => (
-                        <Line key={key} type="monotone" dataKey={key} stroke={chartConfig[key].color} strokeWidth={2} dot={false} />
+                        <Line key={key} type="monotone" dataKey={key} stroke={chartConfig[key]?.color} strokeWidth={2} dot={false} />
                     ))}
                 </LineChart>
             </ResponsiveContainer>
         </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );

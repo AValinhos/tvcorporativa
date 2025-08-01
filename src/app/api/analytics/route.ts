@@ -1,5 +1,4 @@
 
-
 import { promises as fs } from 'fs';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,7 +15,6 @@ interface Playlist {
   id: string;
   name: string;
   items: { mediaId: string; duration: number }[];
-  deviceIds?: string[];
 }
 
 interface Device {
@@ -28,13 +26,7 @@ interface Device {
 async function readAnalyticsData(): Promise<AnalyticsDataPoint[]> {
   try {
     const fileContent = await fs.readFile(analyticsFilePath, 'utf-8');
-    const data = JSON.parse(fileContent) as AnalyticsDataPoint[];
-    // Remove duplicates by creating a map
-    const uniqueDataMap = new Map<string, AnalyticsDataPoint>();
-    data.forEach(item => {
-        uniqueDataMap.set(item.date, item);
-    });
-    return Array.from(uniqueDataMap.values());
+    return JSON.parse(fileContent);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return [];
@@ -46,7 +38,14 @@ async function readAnalyticsData(): Promise<AnalyticsDataPoint[]> {
 
 async function writeAnalyticsData(data: AnalyticsDataPoint[]) {
   try {
-    await fs.writeFile(analyticsFilePath, JSON.stringify(data, null, 2), 'utf-8');
+    const uniqueDataMap = new Map<string, AnalyticsDataPoint>();
+    data.forEach(item => {
+        uniqueDataMap.set(item.date, item);
+    });
+    const uniqueData = Array.from(uniqueDataMap.values()).sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    await fs.writeFile(analyticsFilePath, JSON.stringify(uniqueData, null, 2), 'utf-8');
   } catch (error) {
     console.error('Error writing analytics file:', error);
     throw new Error('Could not write to analytics file.');
@@ -76,42 +75,13 @@ export async function POST(req: NextRequest) {
     const playlists: Playlist[] = allData.playlists || [];
     const devices: Device[] = allData.devices || [];
     
-    // 1. Read existing data and remove any duplicates first
-    const uniqueAnalyticsData = await readAnalyticsData();
-    const existingAnalyticsMap = new Map<string, AnalyticsDataPoint>(
-        uniqueAnalyticsData.map(d => [d.date, d])
-    );
+    let analyticsData = await readAnalyticsData();
     
-    // 2. Get today's date in YYYY-MM-DD format, independent of timezone
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const todayString = `${year}-${month}-${day}`;
+    const today = new Date();
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    // 3. Create a clean map for the last 30 days
-    const last30DaysMap = new Map<string, AnalyticsDataPoint>();
-    const allDeviceNames = new Set(devices.map(d => d.name));
-
-    for (let i = 29; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(now.getDate() - i);
-        const dateString = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-        
-        // Use existing data if available, otherwise initialize with zeroed data
-        if (existingAnalyticsMap.has(dateString)) {
-            last30DaysMap.set(dateString, existingAnalyticsMap.get(dateString)!);
-        } else {
-            const initialData: AnalyticsDataPoint = { date: dateString };
-            allDeviceNames.forEach(name => initialData[name] = 0);
-            last30DaysMap.set(dateString, initialData);
-        }
-    }
-    
-    // 4. Calculate today's duration and update the map
     const dailyDurations: { [key: string]: any } = { date: todayString };
-
-    devices.forEach(device => {
+     devices.forEach(device => {
         const playlist = playlists.find(p => p.id === device.playlistId);
         if(playlist) {
             const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
@@ -121,23 +91,17 @@ export async function POST(req: NextRequest) {
         }
     });
 
-    if(last30DaysMap.has(todayString)) {
-       const todayData = last30DaysMap.get(todayString)!;
-       last30DaysMap.set(todayString, { ...todayData, ...dailyDurations });
+    const todayIndex = analyticsData.findIndex(d => d.date === todayString);
+    if (todayIndex > -1) {
+        // Update today's data, keeping any existing device data
+        analyticsData[todayIndex] = { ...analyticsData[todayIndex], ...dailyDurations };
     } else {
-       // This case should not happen with the new logic, but as a fallback:
-       const initialData: AnalyticsDataPoint = { date: todayString };
-       allDeviceNames.forEach(name => initialData[name] = 0);
-       last30DaysMap.set(todayString, { ...initialData, ...dailyDurations });
+        // Add new entry for today
+        analyticsData.push(dailyDurations);
     }
-
-    // 5. Convert map to array and sort
-    const finalAnalyticsData = Array.from(last30DaysMap.values()).sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
     
-    await writeAnalyticsData(finalAnalyticsData);
-    return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: finalAnalyticsData }, { status: 200 });
+    await writeAnalyticsData(analyticsData);
+    return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: analyticsData }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ message: 'Erro ao atualizar dados de analytics', error: error.message }, { status: 500 });
   }

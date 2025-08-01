@@ -59,12 +59,6 @@ interface Playlist {
   name: string;
 }
 
-interface AnalyticsDataPoint {
-  date: string;
-  [key: string]: any;
-}
-
-
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
@@ -85,12 +79,12 @@ export default function SettingsPage() {
   const [deviceName, setDeviceName] = useState('');
   const [devicePlaylistId, setDevicePlaylistId] = useState('');
   const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsDataPoint[]>([]);
 
 
-  const fetchData = async () => {
+  const fetchPageData = async () => {
     setIsLoading(true);
     try {
+        // Only fetching device and playlist data now.
         const res = await fetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -100,7 +94,6 @@ export default function SettingsPage() {
         const data = await res.json();
         setDevices(data.devices || []);
         setPlaylists(data.playlists || []);
-        setAnalyticsData(data.analyticsData || []);
     } catch (error) {
         toast({ variant: 'destructive', title: 'Erro', description: (error as Error).message });
     } finally {
@@ -109,8 +102,9 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [toast]);
+    fetchPageData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
 
   const handleExport = async () => {
@@ -247,7 +241,7 @@ export default function SettingsPage() {
         });
         if (!res.ok) throw new Error(`Falha ao ${editingDevice ? 'atualizar' : 'criar'} dispositivo`);
         toast({ title: 'Sucesso', description: `Dispositivo ${editingDevice ? 'atualizado' : 'criado'}.` });
-        fetchData();
+        fetchPageData();
         setIsDeviceDialogOpen(false);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Erro', description: error.message });
@@ -266,7 +260,7 @@ export default function SettingsPage() {
         body: JSON.stringify({ action: 'DELETE_DEVICE', payload: { id: deviceToDelete.id } }),
       });
       toast({ title: 'Sucesso', description: 'Dispositivo deletado.' });
-      fetchData();
+      fetchPageData();
       setDeviceToDelete(null);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
@@ -403,7 +397,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid gap-6">
-            <AnalyticsChart analyticsData={analyticsData} />
+            <AnalyticsChart />
         </div>
 
 
