@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2, PlayCircle } from 'lucide-react';
+import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check, ChevronsUpDown } from 'lucide-react';
@@ -32,7 +32,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
 import { MediaItem, Playlist as PlaylistData, Device } from '@/app/page';
@@ -143,26 +142,25 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
   const handleDeviceSelection = (deviceId: string) => {
     if (!selectedPlaylistId) return;
   
-    setCurrentPlaylists(prevPlaylists =>
-      prevPlaylists.map(playlist => {
-        // For the selected playlist, toggle the device ID
-        if (playlist.id === selectedPlaylistId) {
-          const deviceIds = playlist.deviceIds || [];
-          const newDeviceIds = deviceIds.includes(deviceId)
-            ? deviceIds.filter(id => id !== deviceId)
-            : [...deviceIds, deviceId];
-          return { ...playlist, deviceIds: newDeviceIds };
-        }
-        // For other playlists, remove the device ID if it exists
-        if (playlist.deviceIds && playlist.deviceIds.includes(deviceId)) {
-          return {
-            ...playlist,
-            deviceIds: playlist.deviceIds.filter(id => id !== deviceId),
-          };
-        }
-        return playlist;
-      })
-    );
+    const newPlaylists = currentPlaylists.map(playlist => {
+      // For other playlists, remove the device ID if it exists to ensure exclusivity
+      if (playlist.id !== selectedPlaylistId && playlist.deviceIds && playlist.deviceIds.includes(deviceId)) {
+        return {
+          ...playlist,
+          deviceIds: playlist.deviceIds.filter(id => id !== deviceId),
+        };
+      }
+      // For the selected playlist, toggle the device ID
+      if (playlist.id === selectedPlaylistId) {
+        const deviceIds = playlist.deviceIds || [];
+        const newDeviceIds = deviceIds.includes(deviceId)
+          ? deviceIds.filter(id => id !== deviceId)
+          : [...deviceIds, deviceId];
+        return { ...playlist, deviceIds: newDeviceIds };
+      }
+      return playlist;
+    });
+    setCurrentPlaylists(newPlaylists);
   };
 
 
@@ -175,7 +173,6 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
       if(!selectedPlaylist) return;
       setIsSaving(true);
       
-      // Ensure we only save mediaId and duration for items, not the name
       const playlistToSave = {
           ...selectedPlaylist,
           items: selectedPlaylist.items.map(({mediaId, duration}) => ({mediaId, duration}))
@@ -455,10 +452,10 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Salvar Playlist
         </Button>
-        {selectedPlaylist && devicesForSelectedPlaylist.length > 0 && (
-            <Link href={`/display/${devicesForSelectedPlaylist[0]}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+        {devicesForSelectedPlaylist.length > 0 && (
+            <a href={`/display/${devicesForSelectedPlaylist[0]}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">
                 /display/{devicesForSelectedPlaylist[0]}
-            </Link>
+            </a>
         )}
       </CardFooter>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
