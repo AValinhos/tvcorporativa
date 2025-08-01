@@ -100,8 +100,11 @@ export async function POST(req: NextRequest) {
         data.playlists = data.playlists.map((p:any) => p.id === body.payload.id ? { ...p, ...body.payload.updates } : p);
         analyticsShouldUpdate = true;
     } else if (body.action === 'DELETE_PLAYLIST') {
+        const playlistToDelete = data.playlists.find((p:any) => p.id === body.payload.id);
+        if (playlistToDelete && playlistToDelete.deviceIds && playlistToDelete.deviceIds.length > 0) {
+            analyticsShouldUpdate = true;
+        }
         data.playlists = data.playlists.filter((p:any) => p.id !== body.payload.id);
-        analyticsShouldUpdate = true;
     } else if (body.action === 'CREATE_DEVICE') {
         const newId = data.devices.length > 0
           ? String(Math.max(...data.devices.map((d: any) => Number(d.id) || 0)) + 1)
@@ -109,10 +112,16 @@ export async function POST(req: NextRequest) {
         const newDevice = { ...body.payload, id: newId };
         data.devices.push(newDevice);
     } else if (body.action === 'UPDATE_DEVICE') {
+        const device = data.devices.find((d: any) => d.id === body.payload.id);
+        if (device && device.playlistId !== body.payload.updates.playlistId) {
+            analyticsShouldUpdate = true;
+        }
         data.devices = data.devices.map((d: any) => d.id === body.payload.id ? { ...d, ...body.payload.updates } : d);
     } else if (body.action === 'DELETE_DEVICE') {
+        const device = data.devices.find((d:any) => d.id === body.payload.id);
+        if (device) analyticsShouldUpdate = true;
         data.devices = data.devices.filter((d: any) => d.id !== body.payload.id);
-        // Also remove deviceId from any playlists
+        // Also remove deviceId from any playlists that might have it
         data.playlists.forEach((p: any) => {
           if (p.deviceIds && p.deviceIds.includes(body.payload.id)) {
             p.deviceIds = p.deviceIds.filter((id: string) => id !== body.payload.id);
