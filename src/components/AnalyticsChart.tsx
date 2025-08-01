@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { add, format, sub } from 'date-fns';
+import { subDays, format } from 'date-fns';
 
 interface AnalyticsDataPoint {
   date: string;
@@ -60,7 +60,7 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
     });
 
     const now = new Date();
-    const thirtyDaysAgo = sub(now, { days: 30 });
+    const thirtyDaysAgo = subDays(now, 30);
 
     const filteredData = analyticsData.filter(d => {
         const recordDate = new Date(`${d.date}T${d.time}`);
