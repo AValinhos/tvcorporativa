@@ -309,9 +309,9 @@ export default function SettingsPage() {
         <div className="grid gap-6 mb-6">
            <Card>
                 <CardHeader>
-                    <CardTitle>Análise de Exposição de Mídia</CardTitle>
+                    <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
                     <CardDescription>
-                       Gráfico mostrando quantas vezes cada item de mídia foi exibido.
+                       Gráfico mostrando o total de visualizações de conteúdo por dispositivo.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

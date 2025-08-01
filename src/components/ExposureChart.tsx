@@ -9,10 +9,25 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Loader2 } from 'lucide-react';
-import { MediaItem } from '@/app/page';
 
 interface ExposureData {
-  [key: string]: number;
+  [mediaId: string]: number;
+}
+
+interface Device {
+    id: string;
+    name: string;
+    playlistId: string;
+}
+
+interface PlaylistItem {
+    mediaId: string;
+    duration: number;
+}
+interface Playlist {
+    id: string;
+    name: string;
+    items: PlaylistItem[];
 }
 
 interface ChartDataPoint {
@@ -22,7 +37,8 @@ interface ChartDataPoint {
 
 export default function ExposureChart() {
   const [exposureData, setExposureData] = useState<ExposureData | null>(null);
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +62,8 @@ export default function ExposureChart() {
         const dataJson = await dataRes.json();
         
         setExposureData(exposureJson);
-        setMediaItems(dataJson.mediaItems || []);
+        setDevices(dataJson.devices || []);
+        setPlaylists(dataJson.playlists || []);
 
       } catch (err: any) {
         setError(err.message);
@@ -58,21 +75,28 @@ export default function ExposureChart() {
   }, []);
 
   const chartData = useMemo(() => {
-    if (!exposureData || !mediaItems.length) return [];
+    if (!exposureData || !devices.length || !playlists.length) return [];
     
-    const data: ChartDataPoint[] = Object.entries(exposureData)
-      .map(([mediaId, views]) => {
-        const mediaItem = mediaItems.find(item => item.id === mediaId);
+    const data: ChartDataPoint[] = devices.map(device => {
+        const playlist = playlists.find(p => p.id === device.playlistId);
+        let totalViews = 0;
+        
+        if (playlist && playlist.items) {
+            totalViews = playlist.items.reduce((acc, item) => {
+                return acc + (exposureData[item.mediaId] || 0);
+            }, 0);
+        }
+
         return {
-          name: mediaItem?.name || `ID: ${mediaId}`,
-          views: views,
+          name: device.name,
+          views: totalViews,
         };
       })
       .sort((a, b) => b.views - a.views); // Sort by views descending
       
       return data;
 
-  }, [exposureData, mediaItems]);
+  }, [exposureData, devices, playlists]);
 
   const chartConfig = {
     views: {
@@ -122,6 +146,3 @@ export default function ExposureChart() {
     </ChartContainer>
   );
 }
-
-
-    
