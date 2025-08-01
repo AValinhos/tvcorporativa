@@ -1,11 +1,21 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+} from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from '@/components/ui/chart';
 import { Loader2 } from 'lucide-react';
 
@@ -14,19 +24,19 @@ interface ExposureData {
 }
 
 interface Device {
-    id: string;
-    name: string;
-    playlistId: string;
+  id: string;
+  name: string;
+  playlistId: string;
 }
 
 interface PlaylistItem {
-    mediaId: string;
-    duration: number;
+  mediaId: string;
+  duration: number;
 }
 interface Playlist {
-    id: string;
-    name: string;
-    items: PlaylistItem[];
+  id: string;
+  name: string;
+  items: PlaylistItem[];
 }
 
 interface ChartDataPoint {
@@ -63,11 +73,10 @@ export default function ExposureChart() {
 
         const exposureJson = await exposureRes.json();
         const dataJson = await dataRes.json();
-        
+
         setExposureData(exposureJson);
         setDevices(dataJson.devices || []);
         setPlaylists(dataJson.playlists || []);
-
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -76,9 +85,9 @@ export default function ExposureChart() {
         }
       }
     };
-    
+
     fetchData(true); // Carga inicial
-    
+
     const interval = setInterval(() => {
       fetchData(); // Atualizações periódicas
     }, 60000); // Atualiza a cada 60 segundos
@@ -88,16 +97,17 @@ export default function ExposureChart() {
 
   const chartData = useMemo(() => {
     if (!exposureData || !devices.length || !playlists.length) return [];
-    
-    const data: ChartDataPoint[] = devices.map(device => {
-        const playlist = playlists.find(p => p.id === device.playlistId);
+
+    const data: ChartDataPoint[] = devices
+      .map((device) => {
+        const playlist = playlists.find((p) => p.id === device.playlistId);
         let totalViews = 0;
-        
+
         if (playlist && playlist.items) {
-            totalViews = playlist.items.reduce((acc, item) => {
-                const views = exposureData[item.mediaId] || 0;
-                return acc + (Array.isArray(views) ? views.length : Number(views) || 0);
-            }, 0);
+          totalViews = playlist.items.reduce((acc, item) => {
+            const views = exposureData[item.mediaId] || 0;
+            return acc + (Array.isArray(views) ? views.length : Number(views) || 0);
+          }, 0);
         }
 
         return {
@@ -106,9 +116,8 @@ export default function ExposureChart() {
         };
       })
       .sort((a, b) => b.views - a.views); // Sort by views descending
-      
-      return data;
 
+    return data;
   }, [exposureData, devices, playlists]);
 
   const chartConfig = {
@@ -118,45 +127,51 @@ export default function ExposureChart() {
     },
   };
 
-
   if (isLoading) {
-    return <div className="flex h-48 w-full items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    return (
+      <div className="flex h-48 w-full items-center justify-center">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
   }
 
   if (error) {
     return <div className="text-destructive">Erro: {error}</div>;
   }
-  
-  if (chartData.length === 0){
-    return <p className="text-center text-muted-foreground">Nenhum dado de exposição encontrado.</p>;
+
+  if (chartData.length === 0) {
+    return (
+      <p className="text-center text-muted-foreground">
+        Nenhum dado de exposição encontrado.
+      </p>
+    );
   }
 
   return (
-    <ChartContainer config={chartConfig} className="w-full">
-      <BarChart
-        accessibilityLayer
-        data={chartData}
-        layout="vertical"
-        margin={{ left: 10, right: 10 }}
-        barCategoryGap="20%"
-      >
-        <CartesianGrid horizontal={false} />
-        <YAxis
+    <ChartContainer config={chartConfig} className="w-full min-h-[300px]">
+      <LineChart accessibilityLayer data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis
           dataKey="name"
-          type="category"
           tickLine={false}
-          tickMargin={10}
           axisLine={false}
-          tickFormatter={(value) => value.slice(0, 25) + (value.length > 25 ? '...' : '')}
-          className="text-sm"
+          tickMargin={8}
+          tickFormatter={(value) => value.slice(0, 15) + (value.length > 15 ? '...' : '')}
         />
-        <XAxis dataKey="views" type="number" hide />
-        <ChartTooltip
+        <YAxis />
+        <Tooltip
           cursor={false}
-          content={<ChartTooltipContent indicator="line" labelKey='views'/>}
+          content={<ChartTooltipContent indicator="line" />}
         />
-        <Bar dataKey="views" fill="var(--color-views)" radius={4} barSize={15} />
-      </BarChart>
+        <Legend content={<ChartLegendContent />} />
+        <Line
+          dataKey="views"
+          type="monotone"
+          stroke="var(--color-views)"
+          strokeWidth={2}
+          dot={true}
+        />
+      </LineChart>
     </ChartContainer>
   );
 }
