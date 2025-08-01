@@ -110,7 +110,7 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
                         tickFormatter={(value) => value}
                     />
                     <YAxis />
-                    <Tooltip content={<ChartTooltipContent />} />
+                    <Tooltip content={<ChartTooltipContent indicator="dot" />} />
                     <Legend />
                     {deviceKeys.map((key) => (
                         <Line key={key} type="monotone" dataKey={key} stroke={chartConfig[key]?.color} strokeWidth={2} dot={false} />
