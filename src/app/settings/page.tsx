@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import AnalyticsChart from '@/components/AnalyticsChart';
 
 import {
   Table,
@@ -303,6 +304,21 @@ export default function SettingsPage() {
   return (
       <main className="flex-1 p-4 md:p-8">
         <h1 className="text-2xl font-bold mb-6">Configurações</h1>
+
+        <div className="grid gap-6 mb-6">
+           <Card>
+                <CardHeader>
+                    <CardTitle>Análise de Dados de Visualização</CardTitle>
+                    <CardDescription>
+                        Gráfico de uso dos dispositivos ao longo do tempo.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AnalyticsChart />
+                </CardContent>
+            </Card>
+        </div>
+
 
         <div className="grid gap-6 mb-6">
             <Card>
