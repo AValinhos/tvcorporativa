@@ -304,7 +304,6 @@ export default function SettingsPage() {
 
   return (
       <main className="flex-1 p-4 md:p-8">
-        <h1 className="text-2xl font-bold mb-6">Configurações</h1>
 
         <div className="grid gap-6 mb-6">
            <Card>
@@ -314,7 +313,7 @@ export default function SettingsPage() {
                        Gráfico mostrando o total de visualizações de conteúdo por dispositivo.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="h-80">
                     <ExposureChart />
                 </CardContent>
             </Card>

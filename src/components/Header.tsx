@@ -35,6 +35,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
   
   const navItems = [
     { href: '/', label: 'Painel' },
+    { href: '/settings', label: 'Configurações' },
   ];
 
 
