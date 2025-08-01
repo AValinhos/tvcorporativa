@@ -143,7 +143,7 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-4 md:p-8">
         <div className="grid gap-2 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
