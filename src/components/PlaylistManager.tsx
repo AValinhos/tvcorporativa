@@ -32,6 +32,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
 import { MediaItem, Playlist as PlaylistData, Device } from '@/app/page';
@@ -457,3 +458,5 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
     </Card>
   );
 }
+
+    

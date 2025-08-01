@@ -209,5 +209,12 @@
         }
       ]
     }
+  ],
+  "devices": [
+    {
+      "name": "tv do ponto",
+      "playlistId": "1",
+      "id": "1"
+    }
   ]
 }
