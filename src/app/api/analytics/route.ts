@@ -2,6 +2,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
+import { startOfDay } from 'date-fns';
 
 const analyticsFilePath = path.join(process.cwd(), 'src', 'lib', 'analytics.json');
 const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'data.json');
@@ -27,7 +28,12 @@ interface Device {
 async function readAnalyticsData(): Promise<AnalyticsDataPoint[]> {
   try {
     const fileContent = await fs.readFile(analyticsFilePath, 'utf-8');
-    return JSON.parse(fileContent);
+    const data = JSON.parse(fileContent) as any[];
+    // Garante que todos os registros tenham um campo 'time'
+    return data.map(d => ({
+        ...d,
+        time: d.time || '00:00:00' 
+    }));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return [];
@@ -41,8 +47,8 @@ async function writeAnalyticsData(data: AnalyticsDataPoint[]) {
   try {
     // Ordena os dados por data e hora antes de salvar
     data.sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time}Z`);
-        const dateB = new Date(`${b.date}T${b.time}Z`);
+        const dateA = new Date(`${a.date}T${a.time}`);
+        const dateB = new Date(`${b.date}T${b.time}`);
         return dateA.getTime() - dateB.getTime();
     });
     await fs.writeFile(analyticsFilePath, JSON.stringify(data, null, 2), 'utf-8');
@@ -93,7 +99,6 @@ export async function POST(req: NextRequest) {
         }
     });
 
-    // Adiciona o novo registro em vez de atualizar
     analyticsData.push(newDatapoint);
     
     await writeAnalyticsData(analyticsData);
