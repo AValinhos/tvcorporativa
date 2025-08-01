@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import AnalyticsChart from '@/components/AnalyticsChart';
 
 import {
   Table,
@@ -443,10 +442,6 @@ export default function SettingsPage() {
                     </p>
                 </CardContent>
             </Card>
-        </div>
-
-        <div className="grid gap-6">
-            <AnalyticsChart />
         </div>
 
         <Dialog open={isDeviceDialogOpen} onOpenChange={setIsDeviceDialogOpen}>
