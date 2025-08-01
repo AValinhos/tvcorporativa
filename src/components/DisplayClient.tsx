@@ -137,7 +137,11 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
     const fetchAndSetPlaylist = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch('/api/data');
+        const res = await fetch('/api/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'GET_DASHBOARD_DATA' }),
+        });
         if (!res.ok) throw new Error('Falha ao buscar dados');
         const allData = await res.json();
         const foundPlaylist = getPlaylistById(playlistId, allData);

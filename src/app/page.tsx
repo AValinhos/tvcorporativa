@@ -11,13 +11,8 @@ import PlaylistManager from '@/components/PlaylistManager';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart, Tv, Clapperboard, ListMusic, Loader2, ArrowRight, Eye, PlayCircle } from 'lucide-react';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { Line } from 'react-chartjs-2';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import Link from 'next/link';
-
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 
 export interface MediaItem {
@@ -51,71 +46,6 @@ export interface Playlist {
 export interface AnalyticsDataPoint {
     date: string;
     [key: string]: any; 
-}
-
-
-function AnalyticsChart({ analyticsData, playlists }: { analyticsData: AnalyticsDataPoint[] | null, playlists: Playlist[] }) {
-  const chartData = useMemo(() => {
-    if (!analyticsData || !playlists || analyticsData.length === 0 || playlists.length === 0) {
-      return { labels: [], datasets: [] };
-    }
-
-    const labels = analyticsData.map(d => new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
-    
-    const colors = [
-      'rgb(75, 192, 192)',
-      'rgb(255, 99, 132)',
-      'rgb(54, 162, 235)',
-      'rgb(255, 205, 86)',
-      'rgb(153, 102, 255)',
-    ];
-    
-    const datasets = playlists.map((playlist, index) => {
-      return {
-        label: playlist.name,
-        data: analyticsData.map(day => day[playlist.name] || 0),
-        borderColor: colors[index % colors.length],
-        backgroundColor: colors[index % colors.length].replace(')', ', 0.2)').replace('rgb', 'rgba'),
-        fill: true,
-        tension: 0.3,
-      };
-    });
-
-    return { labels, datasets };
-
-  }, [analyticsData, playlists]);
-
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: false,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function(value: any) {
-            return `${value} min`
-          }
-        }
-      }
-    }
-  };
-
-  if (!analyticsData || analyticsData.length === 0) {
-    return (
-      <div className="flex h-80 w-full items-center justify-center text-muted-foreground">
-        <p>Dados de analytics insuficientes para exibir o gráfico.</p>
-      </div>
-    );
-  }
-
-  return <Line options={options} data={chartData} />;
 }
 
 
@@ -318,29 +248,8 @@ export default function Dashboard() {
               <MediaManager mediaItems={filteredMediaItems} onMediaUpdate={fetchData} isLoading={isLoading}/>
           </div>
           
-          <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Evolução do Tempo de Uso</CardTitle>
-                  <CardDescription>Tempo de exibição total por playlist (em minutos) nos últimos dias.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="flex h-80 w-full items-center justify-center">
-                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    </div>
-                  ) : (
-                    <AnalyticsChart 
-                      analyticsData={analyticsData} 
-                      playlists={playlists}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-          </div>
         </main>
       </div>
     </AuthGuard>
   );
 }
-
