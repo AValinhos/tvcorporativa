@@ -1,6 +1,5 @@
 
 'use client';
-import { useAuth } from '@/components/AuthProvider';
 import Header from '@/components/Header';
 
 
