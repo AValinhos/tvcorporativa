@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import AnalyticsChart from '@/components/AnalyticsChart';
+import ExposureChart from '@/components/ExposureChart';
 
 import {
   Table,
@@ -114,7 +114,8 @@ export default function SettingsPage() {
     try {
       const response = await fetch(`/api/backup?type=${exportType}`);
       if (!response.ok) {
-        throw new Error('Falha ao exportar os dados.');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao exportar os dados.');
       }
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -308,13 +309,13 @@ export default function SettingsPage() {
         <div className="grid gap-6 mb-6">
            <Card>
                 <CardHeader>
-                    <CardTitle>Análise de Dados de Visualização</CardTitle>
+                    <CardTitle>Análise de Exposição de Mídia</CardTitle>
                     <CardDescription>
-                        Gráfico de uso dos dispositivos ao longo do tempo.
+                       Gráfico mostrando quantas vezes cada item de mídia foi exibido.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <AnalyticsChart />
+                    <ExposureChart />
                 </CardContent>
             </Card>
         </div>
@@ -547,4 +548,5 @@ export default function SettingsPage() {
         </AlertDialog>
       </main>
   );
-}
+
+    
