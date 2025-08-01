@@ -34,9 +34,12 @@ export async function POST(req: NextRequest) {
     const { mediaId, deviceId } = body;
     const exposureData = await readExposureData();
 
+    let updated = false;
+
     // Se um mediaId específico for enviado (ex: troca de item no carrossel), incrementa apenas ele.
     if (mediaId) {
         exposureData[mediaId] = (exposureData[mediaId] || 0) + 1;
+        updated = true;
     }
 
     // Se um deviceId for enviado (ex: carregamento da tela), incrementa todos os itens da playlist associada.
@@ -51,13 +54,18 @@ export async function POST(req: NextRequest) {
                 playlist.items.forEach((item: any) => {
                     exposureData[item.mediaId] = (exposureData[item.mediaId] || 0) + 1;
                 });
+                updated = true;
             }
         }
     }
 
+    if (updated) {
+        await writeExposureData(exposureData);
+        return NextResponse.json({ message: 'Dados de exposição atualizados com sucesso', data: exposureData }, { status: 200 });
+    }
 
-    await writeExposureData(exposureData);
-    return NextResponse.json({ message: 'Dados de exposição atualizados com sucesso', data: exposureData }, { status: 200 });
+    return NextResponse.json({ message: 'Nenhuma ação de exposição realizada.' }, { status: 200 });
+
   } catch (error: any) {
     return NextResponse.json({ message: 'Erro ao atualizar dados de exposição', error: error.message }, { status: 500 });
   }

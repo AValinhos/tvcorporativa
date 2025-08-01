@@ -65,12 +65,12 @@ const getPlaylistByDeviceId = (deviceId: string, allData: { mediaItems: MediaIte
 }
 
 
-const trackExposure = async (mediaId?: string, deviceId?: string) => {
+const trackExposure = async (payload: { mediaId?: string, deviceId?: string }) => {
     try {
         await fetch('/api/exposure', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mediaId, deviceId }),
+            body: JSON.stringify(payload),
         });
     } catch (error) {
         console.error("Failed to track exposure:", error);
@@ -148,11 +148,11 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
     // Roda apenas uma vez ao montar para registrar a visualização da tela inteira.
     if (deviceId) {
       // 1. Primeiro registro na abertura da tela.
-      trackExposure(undefined, deviceId);
+      trackExposure({ deviceId });
       
       // 2. Registros subsequentes a cada hora.
       const hourlyTimer = setInterval(() => {
-        trackExposure(undefined, deviceId);
+        trackExposure({ deviceId });
       }, 3600 * 1000); // 1 hora
       
       // Limpa o timer quando o componente é desmontado.
@@ -194,7 +194,7 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
       const newIndex = api.selectedScrollSnap();
       setCurrent(newIndex);
       // Rastreia a exposição de cada item individualmente na troca.
-      trackExposure(playlist.items[newIndex].id);
+      trackExposure({ mediaId: playlist.items[newIndex].id });
     }
     
     api.on("select", onSelect)
