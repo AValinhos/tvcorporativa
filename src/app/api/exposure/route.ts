@@ -38,7 +38,6 @@ export async function POST(req: NextRequest) {
         exposureData[mediaId] = (exposureData[mediaId] || 0) + 1;
     }
 
-    // If deviceId is provided, track exposure for all items in the playlist linked to that device
     if (deviceId) {
         const dataFileContent = await fs.readFile(dataFilePath, 'utf-8');
         const allData = JSON.parse(dataFileContent);

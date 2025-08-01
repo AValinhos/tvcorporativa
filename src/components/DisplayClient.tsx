@@ -145,16 +145,24 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (playlist && playlist.items.length > 0) {
-      trackExposure(playlist.items[0].id); 
-      
-      const hourlyTimer = setInterval(() => {
-        trackExposure(undefined, deviceId);
-      }, 3600 * 1000); 
+    // This effect runs only once when the component mounts
+    // It registers the initial view for the entire playlist of the device
+    // and sets up the hourly tracking.
+    const setupHourlyTracking = () => {
+        trackExposure(undefined, deviceId); // Initial tracking for the device
+        
+        const hourlyTimer = setInterval(() => {
+            trackExposure(undefined, deviceId);
+        }, 3600 * 1000); // 1 hour
 
-      return () => clearInterval(hourlyTimer);
+        return () => clearInterval(hourlyTimer);
+    };
+
+    if (deviceId) {
+        const cleanup = setupHourlyTracking();
+        return cleanup;
     }
-  }, [playlist, deviceId]);
+  }, [deviceId]);
 
   React.useEffect(() => {
     const fetchAndSetPlaylist = async () => {
@@ -189,6 +197,7 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
     const onSelect = () => {
       const newIndex = api.selectedScrollSnap();
       setCurrent(newIndex);
+      // Track individual media item exposure on change
       trackExposure(playlist.items[newIndex].id);
     }
     
