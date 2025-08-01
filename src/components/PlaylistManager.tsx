@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2, PlayCircle } from 'lucide-react';
+import { PlusCircle, XCircle, GripVertical, Loader2, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check, ChevronsUpDown } from 'lucide-react';
@@ -330,16 +330,6 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                 </PopoverContent>
             </Popover>
 
-            {selectedPlaylist && selectedPlaylist.deviceIds && selectedPlaylist.deviceIds.length > 0 && (
-                <Link href={`/display/${selectedPlaylist.deviceIds[0]}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm">
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        Visualizar Playlist
-                    </Button>
-                </Link>
-            )}
-
-
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
                     <Button>Criar Nova</Button>
@@ -442,11 +432,16 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
             </div>
         )}
       </CardContent>
-       <CardFooter className="border-t px-6 py-4">
+       <CardFooter className="border-t px-6 py-4 flex items-center justify-between">
         <Button onClick={handleSaveChanges} disabled={isSaving || !selectedPlaylist}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Salvar Playlist
         </Button>
+        {selectedPlaylist && selectedPlaylist.deviceIds && selectedPlaylist.deviceIds.length > 0 && (
+            <Link href={`/display/${selectedPlaylist.deviceIds[0]}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">
+                Visualizar em: /display/{selectedPlaylist.deviceIds[0]}
+            </Link>
+        )}
       </CardFooter>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent>
