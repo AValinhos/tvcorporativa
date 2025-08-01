@@ -20,6 +20,18 @@
     "date": "2025-07-30",
     "Lobby Principal": 1,
     "Rodeio": 1,
-    "Xineray": 0
+    "Xineray": 1
+  },
+  {
+    "date": "2025-07-31",
+    "Lobby Principal": 1,
+    "Rodeio": 1,
+    "Xineray": 1
+  },
+  {
+    "date": "2025-08-01",
+    "Lobby Principal": 1,
+    "Rodeio": 1,
+    "Xineray": 1
   }
 ]
