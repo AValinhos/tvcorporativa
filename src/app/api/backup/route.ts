@@ -16,10 +16,12 @@ async function readFileSafely(filePath: string): Promise<any> {
         return JSON.parse(fileContent);
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-            return []; // Retorna um array vazio se o arquivo de analytics não existir
-        }
-        if (filePath.endsWith('exposure.json')) {
-            return {}; // Retorna um objeto vazio se o arquivo de exposure não existir
+            if (filePath.endsWith('analytics.json')) {
+                return []; 
+            }
+            if (filePath.endsWith('exposure.json')) {
+                return {}; 
+            }
         }
         console.error(`Error reading or parsing file: ${filePath}`, error);
         throw new Error(`Falha ao ler o arquivo: ${path.basename(filePath)}`);
