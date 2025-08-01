@@ -82,7 +82,7 @@ export default function ExposureChart() {
     
     const interval = setInterval(() => {
       fetchData(); // Atualizações periódicas
-    }, 60000); // Atualiza a cada 60 segundos
+    }, 15000); // Atualiza a cada 15 segundos
 
     return () => clearInterval(interval); // Limpa o intervalo quando o componente é desmontado
   }, []);
@@ -96,7 +96,8 @@ export default function ExposureChart() {
         
         if (playlist && playlist.items) {
             totalViews = playlist.items.reduce((acc, item) => {
-                return acc + (exposureData[item.mediaId] || 0);
+                const views = exposureData[item.mediaId] || 0;
+                return acc + (Array.isArray(views) ? views.length : Number(views) || 0);
             }, 0);
         }
 
@@ -138,6 +139,7 @@ export default function ExposureChart() {
         data={chartData}
         layout="vertical"
         margin={{ left: 10, right: 10 }}
+        barCategoryGap={-5}
       >
         <CartesianGrid horizontal={false} />
         <YAxis
