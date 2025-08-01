@@ -1,4 +1,3 @@
-
 'use client'
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -79,6 +78,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
     if (!isLoading && playlists.length > 0) {
         const fullPlaylists = playlists.map(p => ({
             ...p,
+            deviceIds: p.deviceIds || [],
             items: p.items.map(item => {
                 const media = mediaItems.find(m => m.id === item.mediaId);
                 return {
@@ -142,32 +142,28 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
   
   const handleDeviceSelection = (deviceId: string) => {
     if (!selectedPlaylistId) return;
-
-    setCurrentPlaylists(prevPlaylists => {
-      // Create a deep copy to avoid direct state mutation
-      const newPlaylists = JSON.parse(JSON.stringify(prevPlaylists));
-
-      // Find the playlist to update and others to clean
-      const playlistToUpdate = newPlaylists.find((p: Playlist) => p.id === selectedPlaylistId);
-      if (!playlistToUpdate) return prevPlaylists;
-
-      const currentDeviceIds = playlistToUpdate.deviceIds || [];
-      const isDeviceSelected = currentDeviceIds.includes(deviceId);
-
-      // Add or remove from the selected playlist
-      playlistToUpdate.deviceIds = isDeviceSelected
-        ? currentDeviceIds.filter((id: string) => id !== deviceId)
-        : [...currentDeviceIds, deviceId];
-
-      // Remove from any other playlist
-      return newPlaylists.map((p: Playlist) => {
-        if (p.id !== selectedPlaylistId && p.deviceIds?.includes(deviceId)) {
-          p.deviceIds = p.deviceIds.filter((id: string) => id !== deviceId);
+  
+    setCurrentPlaylists(prevPlaylists =>
+      prevPlaylists.map(playlist => {
+        // For the selected playlist, toggle the device ID
+        if (playlist.id === selectedPlaylistId) {
+          const deviceIds = playlist.deviceIds || [];
+          const newDeviceIds = deviceIds.includes(deviceId)
+            ? deviceIds.filter(id => id !== deviceId)
+            : [...deviceIds, deviceId];
+          return { ...playlist, deviceIds: newDeviceIds };
         }
-        return p;
-      });
-    });
-  }
+        // For other playlists, remove the device ID if it exists
+        if (playlist.deviceIds && playlist.deviceIds.includes(deviceId)) {
+          return {
+            ...playlist,
+            deviceIds: playlist.deviceIds.filter(id => id !== deviceId),
+          };
+        }
+        return playlist;
+      })
+    );
+  };
 
 
   const updatePlaylistInState = (updatedPlaylist: Playlist) => {
@@ -179,6 +175,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
       if(!selectedPlaylist) return;
       setIsSaving(true);
       
+      // Ensure we only save mediaId and duration for items, not the name
       const playlistToSave = {
           ...selectedPlaylist,
           items: selectedPlaylist.items.map(({mediaId, duration}) => ({mediaId, duration}))
@@ -209,7 +206,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
     }
     setIsProcessing(true);
     try {
-        const newPlaylistPayload = { name: newPlaylistName, items: [] };
+        const newPlaylistPayload = { name: newPlaylistName, items: [], deviceIds: [] };
         const res = await fetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -217,7 +214,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
         });
         if (!res.ok) throw new Error('Falha ao criar playlist');
         const result = await res.json();
-        const createdPlaylist = result.data.playlists.find((p:Playlist) => p.name === newPlaylistName);
+        const createdPlaylist = result.data.playlists.find((p:PlaylistData) => p.name === newPlaylistName);
         toast({ title: "Sucesso!", description: "Playlist criada." });
         setNewPlaylistName('');
         setIsCreateDialogOpen(false);
@@ -459,9 +456,8 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
           Salvar Playlist
         </Button>
         {selectedPlaylist && devicesForSelectedPlaylist.length > 0 && (
-            <Link href={`/display/${devicesForSelectedPlaylist[0]}`} title="Ver Tela ao Vivo" target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline hover:text-primary/80 flex items-center gap-1.5">
-                <PlayCircle className="h-4 w-4" />
-                Visualizar em: /display/{devicesForSelectedPlaylist[0]}
+            <Link href={`/display/${devicesForSelectedPlaylist[0]}`} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                /display/{devicesForSelectedPlaylist[0]}
             </Link>
         )}
       </CardFooter>
