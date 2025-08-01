@@ -43,8 +43,10 @@ export default function ExposureChart() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+    const fetchData = async (isInitialLoad = false) => {
+      if (isInitialLoad) {
+        setIsLoading(true);
+      }
       setError(null);
       try {
         const [exposureRes, dataRes] = await Promise.all([
@@ -70,10 +72,19 @@ export default function ExposureChart() {
       } catch (err: any) {
         setError(err.message);
       } finally {
-        setIsLoading(false);
+        if (isInitialLoad) {
+          setIsLoading(false);
+        }
       }
     };
-    fetchData();
+    
+    fetchData(true); // Carga inicial
+    
+    const interval = setInterval(() => {
+      fetchData(); // Atualizações periódicas
+    }, 60000); // Atualiza a cada 60 segundos
+
+    return () => clearInterval(interval); // Limpa o intervalo quando o componente é desmontado
   }, []);
 
   const chartData = useMemo(() => {
