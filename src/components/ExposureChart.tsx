@@ -139,7 +139,7 @@ export default function ExposureChart() {
         data={chartData}
         layout="vertical"
         margin={{ left: 10, right: 10 }}
-        barCategoryGap={-5}
+        barCategoryGap="-15%"
       >
         <CartesianGrid horizontal={false} />
         <YAxis
