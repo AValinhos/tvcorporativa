@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { add, format, sub } from 'date-fns';
 
 interface AnalyticsDataPoint {
   date: string;
+  time: string;
   [key: string]: any;
 }
 
@@ -51,37 +53,23 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
     const allDeviceKeys = new Set<string>();
     analyticsData.forEach(d => {
         Object.keys(d).forEach(key => {
-            if (key !== 'date') {
+            if (key !== 'date' && key !== 'time') {
                 allDeviceKeys.add(key);
             }
         });
     });
 
-    const dataMap = new Map(analyticsData.map(d => [d.date, d]));
-    const last30Days: AnalyticsDataPoint[] = [];
-    
-    // Use UTC date to avoid timezone issues during date calculations
-    const today = new Date();
-    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const now = new Date();
+    const thirtyDaysAgo = sub(now, { days: 30 });
 
-    for (let i = 29; i >= 0; i--) {
-        const date = new Date(todayUTC);
-        date.setUTCDate(todayUTC.getUTCDate() - i);
-        
-        const dateString = date.toISOString().split('T')[0];
-        const dayData = dataMap.get(dateString) || {};
-        const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
-        
-        const dataPoint: AnalyticsDataPoint = { date: formattedDate, ...dayData };
-        
-        allDeviceKeys.forEach(key => {
-            if (!dataPoint.hasOwnProperty(key)) {
-                dataPoint[key] = 0;
-            }
-        });
-        
-        last30Days.push(dataPoint);
-    }
+    const filteredData = analyticsData.filter(d => {
+        const recordDate = new Date(`${d.date}T${d.time}`);
+        return recordDate >= thirtyDaysAgo && recordDate <= now;
+    }).map(d => ({
+        ...d,
+        fullDate: `${d.date} ${d.time}`,
+        formattedTime: format(new Date(`${d.date}T${d.time}`), "dd/MM HH:mm")
+    }));
     
     const config: ChartConfig = {};
     Array.from(allDeviceKeys).forEach((key, index) => {
@@ -91,7 +79,7 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
         }
     });
 
-    return { chartData: last30Days, chartConfig: config };
+    return { chartData: filteredData, chartConfig: config };
 
   }, [analyticsData]);
   
@@ -102,7 +90,7 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
     <Card className={className}>
       <CardHeader>
         <CardTitle>Monitoramento de Atividade (Últimos 30 dias)</CardTitle>
-        <CardDescription>Tempo de uso diário (em minutos) por dispositivo.</CardDescription>
+        <CardDescription>Tempo de uso (em minutos) por dispositivo ao longo do tempo.</CardDescription>
       </CardHeader>
       <CardContent>
        {isLoading ? (
@@ -115,7 +103,7 @@ export default function AnalyticsChart({ className }: AnalyticsChartProps) {
                 <LineChart data={chartData}>
                     <CartesianGrid vertical={false} />
                     <XAxis
-                        dataKey="date"
+                        dataKey="formattedTime"
                         tickLine={false}
                         tickMargin={10}
                         axisLine={false}

@@ -8,6 +8,7 @@ const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'data.json');
 
 interface AnalyticsDataPoint {
   date: string;
+  time: string;
   [key: string]: any;
 }
 
@@ -38,14 +39,13 @@ async function readAnalyticsData(): Promise<AnalyticsDataPoint[]> {
 
 async function writeAnalyticsData(data: AnalyticsDataPoint[]) {
   try {
-    const uniqueDataMap = new Map<string, AnalyticsDataPoint>();
-    data.forEach(item => {
-        uniqueDataMap.set(item.date, item);
+    // Ordena os dados por data e hora antes de salvar
+    data.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time}Z`);
+        const dateB = new Date(`${b.date}T${b.time}Z`);
+        return dateA.getTime() - dateB.getTime();
     });
-    const uniqueData = Array.from(uniqueDataMap.values()).sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    await fs.writeFile(analyticsFilePath, JSON.stringify(uniqueData, null, 2), 'utf-8');
+    await fs.writeFile(analyticsFilePath, JSON.stringify(data, null, 2), 'utf-8');
   } catch (error) {
     console.error('Error writing analytics file:', error);
     throw new Error('Could not write to analytics file.');
@@ -77,27 +77,24 @@ export async function POST(req: NextRequest) {
     
     let analyticsData = await readAnalyticsData();
     
-    // Use UTC date to avoid timezone issues
-    const today = new Date();
-    const todayString = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).toISOString().split('T')[0];
+    const now = new Date();
+    const dateString = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeString = now.toTimeString().split(' ')[0]; // HH:MM:SS
 
-    const dailyDurations: { [key: string]: any } = { date: todayString };
+    const newDatapoint: AnalyticsDataPoint = { date: dateString, time: timeString };
+
      devices.forEach(device => {
         const playlist = playlists.find(p => p.id === device.playlistId);
         if(playlist) {
             const totalDurationSeconds = playlist.items.reduce((acc, item) => acc + item.duration, 0);
-            dailyDurations[device.name] = Math.ceil(totalDurationSeconds / 60); 
+            newDatapoint[device.name] = Math.ceil(totalDurationSeconds / 60); 
         } else {
-             dailyDurations[device.name] = 0;
+             newDatapoint[device.name] = 0;
         }
     });
 
-    const todayIndex = analyticsData.findIndex(d => d.date === todayString);
-    if (todayIndex > -1) {
-        analyticsData[todayIndex] = { ...analyticsData[todayIndex], ...dailyDurations };
-    } else {
-        analyticsData.push(dailyDurations);
-    }
+    // Adiciona o novo registro em vez de atualizar
+    analyticsData.push(newDatapoint);
     
     await writeAnalyticsData(analyticsData);
     return NextResponse.json({ message: 'Dados de analytics atualizados com sucesso', data: analyticsData }, { status: 200 });
