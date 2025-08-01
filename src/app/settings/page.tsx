@@ -45,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import Header from '@/components/Header';
 
 type BackupType = 'content' | 'visualization';
 
@@ -303,22 +304,23 @@ export default function SettingsPage() {
   }
 
   return (
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <Header />
       <main className="flex-1 p-4 md:p-8">
-
-        <div className="grid gap-6 mb-6">
-           <Card>
-                <CardHeader>
-                    <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
-                    <CardDescription>
-                       Gráfico mostrando o total de visualizações de conteúdo por dispositivo.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="h-80">
-                    <ExposureChart />
-                </CardContent>
-            </Card>
+        <div className="grid gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
+              <CardDescription>
+                Gráfico mostrando o total de visualizações de conteúdo por
+                dispositivo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <ExposureChart />
+            </CardContent>
+          </Card>
         </div>
-
 
         <div className="grid gap-6 mb-6">
             <Card>
@@ -546,4 +548,7 @@ export default function SettingsPage() {
             </AlertDialogContent>
         </AlertDialog>
       </main>
+    </div>
   );
+}
+    
