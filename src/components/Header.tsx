@@ -134,8 +134,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
             <DialogHeader>
               <DialogTitle>Suporte Técnico</DialogTitle>
               <DialogDescription>
-                Para obter ajuda, por favor, abra um chamado com nossa equipe de suporte. Eles irão auxiliá-lo com qualquer problema ou dúvida que você tenha.
-                <p className='mt-4'>Aguarde o contato do suporte técnico.</p>
+                Para obter ajuda, por favor, abra um chamado para a tecnologia da informação nossa equipe de suporte. Eles irão auxiliá-lo com qualquer problema ou dúvida que você tenha.
               </DialogDescription>
             </DialogHeader>
           </DialogContent>
