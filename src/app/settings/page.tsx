@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -303,21 +304,6 @@ export default function SettingsPage() {
 
   return (
     <main className="flex-1 p-4 md:p-8">
-      <div className="grid gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
-            <CardDescription>
-              Gráfico mostrando o total de visualizações de conteúdo por
-              dispositivo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6 pt-0">
-            <ExposureChart />
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="grid gap-6 mb-6">
           <Card>
               <CardHeader>
@@ -456,6 +442,21 @@ export default function SettingsPage() {
                   </p>
               </CardContent>
           </Card>
+      </div>
+
+      <div className="grid gap-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
+            <CardDescription>
+              Gráfico mostrando o total de visualizações de conteúdo por
+              dispositivo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 pt-0">
+            <ExposureChart />
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog open={isDeviceDialogOpen} onOpenChange={setIsDeviceDialogOpen}>
