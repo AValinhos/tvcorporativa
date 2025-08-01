@@ -71,6 +71,9 @@ export async function POST(req: NextRequest) {
         dailyDurations[playlist.name] = Math.ceil(totalDurationSeconds / 60);
     });
 
+    // Ordena por data para garantir a consistência
+    analyticsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
     const todayIndex = analyticsData.findIndex(d => d.date === today);
 
     if (todayIndex > -1) {
@@ -81,10 +84,11 @@ export async function POST(req: NextRequest) {
       analyticsData.push(dailyDurations);
     }
     
-    // Ordena por data e mantém apenas os últimos 30 dias
+    // Garante que a ordenação seja refeita após a adição de um novo elemento
     analyticsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Mantém apenas os últimos 30 dias
     if (analyticsData.length > 30) {
-        // Garante que não tenhamos mais de 30 registros
         analyticsData.splice(0, analyticsData.length - 30);
     }
 
