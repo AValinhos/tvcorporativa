@@ -279,84 +279,83 @@ export default function Dashboard() {
             </Card>
           </div>
 
+          <Card>
+              <CardHeader>
+                  <CardTitle>Exposição de Conteúdo por Playlist</CardTitle>
+                  <CardDescription>Métricas de visualização para cada uma das suas telas.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                    <div className="flex h-40 w-full items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : exposureStatsPerPlaylist.length > 0 ? (
+                  <Carousel
+                    opts={{
+                      align: "start",
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent>
+                      {exposureStatsPerPlaylist.map((stats) => (
+                        <CarouselItem key={stats.playlistId} className="md:basis-1/2 lg:basis-1/3">
+                          <div className="p-1">
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="truncate text-lg">{stats.playlistName}</CardTitle>
+                                <CardDescription>{stats.exposedItemsCount} itens expostos</CardDescription>
+                              </CardHeader>
+                              <CardContent className="flex h-24 flex-col justify-center">
+                                {stats.mostViewedItem ? (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Mais Visto:</p>
+                                    <p className="font-semibold truncate">{stats.mostViewedItem.name}</p>
+                                    <p className="text-sm text-muted-foreground">{stats.mostViewedItem.views} visualizações</p>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">Nenhuma exposição registrada.</p>
+                                )}
+                              </CardContent>
+                              <CardContent className="p-4 pt-0">
+                                  <Link href={`/display/${stats.playlistId}`} target="_blank" className='w-full'>
+                                  <Button size="sm" className="w-full">
+                                    Ver Tela
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Button>
+                                </Link>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious />
+                    <CarouselNext />
+                  </Carousel>
+                ) : (
+                    <div className="flex h-40 w-full items-center justify-center rounded-md border-2 border-dashed">
+                      <p className="text-muted-foreground">Crie playlists para ver as métricas de exposição.</p>
+                    </div>
+                )}
+              </CardContent>
+            </Card>
+          
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
               <ContentUploader onContentSaved={fetchData} />
-              
-              <Card className="lg:col-span-3">
-                 <CardHeader>
-                    <CardTitle>Exposição de Conteúdo por Playlist</CardTitle>
-                    <CardDescription>Métricas de visualização para cada uma das suas telas.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                     <div className="flex h-40 w-full items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                     </div>
-                  ) : exposureStatsPerPlaylist.length > 0 ? (
-                    <Carousel
-                      opts={{
-                        align: "start",
-                      }}
-                      className="w-full"
-                    >
-                      <CarouselContent>
-                        {exposureStatsPerPlaylist.map((stats) => (
-                          <CarouselItem key={stats.playlistId} className="md:basis-1/2 lg:basis-1/3">
-                            <div className="p-1">
-                              <Card>
-                                <CardHeader>
-                                  <CardTitle className="truncate text-lg">{stats.playlistName}</CardTitle>
-                                  <CardDescription>{stats.exposedItemsCount} itens expostos</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex h-24 flex-col justify-center">
-                                  {stats.mostViewedItem ? (
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Mais Visto:</p>
-                                      <p className="font-semibold truncate">{stats.mostViewedItem.name}</p>
-                                      <p className="text-sm text-muted-foreground">{stats.mostViewedItem.views} visualizações</p>
-                                    </div>
-                                  ) : (
-                                    <p className="text-sm text-muted-foreground">Nenhuma exposição registrada.</p>
-                                  )}
-                                </CardContent>
-                                <CardContent className="p-4 pt-0">
-                                   <Link href={`/display/${stats.playlistId}`} target="_blank" className='w-full'>
-                                    <Button size="sm" className="w-full">
-                                      Ver Tela
-                                      <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                  </Link>
-                                </CardContent>
-                              </Card>
-                            </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                      <CarouselPrevious />
-                      <CarouselNext />
-                    </Carousel>
-                  ) : (
-                     <div className="flex h-40 w-full items-center justify-center rounded-md border-2 border-dashed">
-                        <p className="text-muted-foreground">Crie playlists para ver as métricas de exposição.</p>
-                     </div>
-                  )}
-                </CardContent>
-              </Card>
-
-          </div>
-          
-           <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
-              <MediaManager mediaItems={filteredMediaItems} onMediaUpdate={fetchData} isLoading={isLoading}/>
-          </div>
-
-           <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
               <PlaylistManager 
+                className="lg:col-span-3"
                 mediaItems={mediaItems} 
                 playlists={filteredPlaylists} 
                 onPlaylistUpdate={fetchData}
                 isLoading={isLoading}
               />
+          </div>
 
+          <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
+              <MediaManager mediaItems={filteredMediaItems} onMediaUpdate={fetchData} isLoading={isLoading}/>
+          </div>
+          
+          <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
               <Card>
                 <CardHeader>
                   <CardTitle>Evolução do Tempo de Uso</CardTitle>
@@ -381,4 +380,5 @@ export default function Dashboard() {
     </AuthGuard>
   );
 }
+
 

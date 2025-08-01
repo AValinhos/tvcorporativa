@@ -33,6 +33,7 @@ import {
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { MediaItem, Playlist as PlaylistData } from '@/app/page';
+import { cn } from '@/lib/utils';
 
 interface FullPlaylistItem {
   mediaId: string;
@@ -46,14 +47,14 @@ interface Playlist {
   items: FullPlaylistItem[];
 }
 
-interface PlaylistManagerProps {
+interface PlaylistManagerProps extends React.HTMLAttributes<HTMLDivElement> {
     mediaItems: MediaItem[];
     playlists: PlaylistData[];
     onPlaylistUpdate: () => void;
     isLoading: boolean;
 }
 
-export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdate, isLoading }: PlaylistManagerProps) {
+export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdate, isLoading, className }: PlaylistManagerProps) {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
   const [currentPlaylists, setCurrentPlaylists] = useState<Playlist[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -254,7 +255,7 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
 
   if (isLoading) {
     return (
-      <Card className="sm:col-span-2 md:col-span-full lg:col-span-2 xl:col-span-2 flex items-center justify-center h-96">
+      <Card className={cn("sm:col-span-2 md:col-span-full lg:col-span-2 xl:col-span-2 flex items-center justify-center h-96", className)}>
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </Card>
     );
@@ -265,7 +266,7 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
   ) || [];
 
   return (
-    <Card className="sm:col-span-2 md:col-span-full lg:col-span-2 xl:col-span-2">
+    <Card className={cn("sm:col-span-2 md:col-span-full lg:col-span-2 xl:col-span-2", className)}>
       <CardHeader>
         <CardTitle>Editor de Playlist</CardTitle>
         <CardDescription>
@@ -415,3 +416,4 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
     </Card>
   );
 }
+
