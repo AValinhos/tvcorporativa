@@ -10,23 +10,18 @@ const exposureFilePath = path.join(process.cwd(), 'src', 'lib', 'exposure.json')
 
 type BackupType = 'content' | 'visualization';
 
-async function readFileSafely(filePath: string): Promise<any> {
+const readFileSafely = async (filePath: string, defaultData: any) => {
     try {
         const fileContent = await fs.readFile(filePath, 'utf-8');
         return JSON.parse(fileContent);
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-            if (filePath.endsWith('analytics.json')) {
-                return []; 
-            }
-            if (filePath.endsWith('exposure.json')) {
-                return {}; 
-            }
+            return defaultData; // Retorna dado padrão se arquivo não existe
         }
         console.error(`Error reading or parsing file: ${filePath}`, error);
         throw new Error(`Falha ao ler o arquivo: ${path.basename(filePath)}`);
     }
-}
+};
 
 
 // Exportar Backup
@@ -41,8 +36,8 @@ export async function GET(req: NextRequest) {
         fileContent = await fs.readFile(dataFilePath, 'utf-8');
         filename = 'content-backup.json';
     } else if (type === 'visualization') {
-        const analyticsData = await readFileSafely(analyticsFilePath);
-        const exposureData = await readFileSafely(exposureFilePath);
+        const analyticsData = await readFileSafely(analyticsFilePath, []);
+        const exposureData = await readFileSafely(exposureFilePath, {});
         fileContent = JSON.stringify({ analyticsData, exposureData }, null, 2);
         filename = 'visualization-backup.json';
     } else {
