@@ -82,7 +82,7 @@ export default function ExposureChart() {
     
     const interval = setInterval(() => {
       fetchData(); // Atualizações periódicas
-    }, 15000); // Atualiza a cada 15 segundos
+    }, 60000); // Atualiza a cada 60 segundos
 
     return () => clearInterval(interval); // Limpa o intervalo quando o componente é desmontado
   }, []);
@@ -133,7 +133,7 @@ export default function ExposureChart() {
   }
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+    <ChartContainer config={chartConfig} className="w-full">
       <BarChart
         accessibilityLayer
         data={chartData}
@@ -156,7 +156,7 @@ export default function ExposureChart() {
           cursor={false}
           content={<ChartTooltipContent indicator="line" labelKey='views'/>}
         />
-        <Bar dataKey="views" fill="var(--color-views)" radius={4} barSize={20} />
+        <Bar dataKey="views" fill="var(--color-views)" radius={4} barSize={15} />
       </BarChart>
     </ChartContainer>
   );
