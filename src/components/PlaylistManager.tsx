@@ -32,6 +32,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
 import { MediaItem, Playlist as PlaylistData, Device } from '@/app/page';
@@ -141,25 +142,23 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
   
   const handleDeviceSelection = (deviceId: string) => {
     if (!selectedPlaylistId) return;
-  
+
     const newPlaylists = currentPlaylists.map(playlist => {
-      // For other playlists, remove the device ID if it exists to ensure exclusivity
-      if (playlist.id !== selectedPlaylistId && playlist.deviceIds && playlist.deviceIds.includes(deviceId)) {
-        return {
-          ...playlist,
-          deviceIds: playlist.deviceIds.filter(id => id !== deviceId),
-        };
-      }
-      // For the selected playlist, toggle the device ID
-      if (playlist.id === selectedPlaylistId) {
-        const deviceIds = playlist.deviceIds || [];
-        const newDeviceIds = deviceIds.includes(deviceId)
-          ? deviceIds.filter(id => id !== deviceId)
-          : [...deviceIds, deviceId];
-        return { ...playlist, deviceIds: newDeviceIds };
-      }
-      return playlist;
+        // Un-assign from other playlists
+        if (playlist.id !== selectedPlaylistId && playlist.deviceIds?.includes(deviceId)) {
+            return { ...playlist, deviceIds: playlist.deviceIds.filter(id => id !== deviceId) };
+        }
+        // Assign/Un-assign from the selected playlist
+        if (playlist.id === selectedPlaylistId) {
+            const deviceIds = playlist.deviceIds || [];
+            const newDeviceIds = deviceIds.includes(deviceId)
+                ? deviceIds.filter(id => id !== deviceId)
+                : [...deviceIds, deviceId];
+            return { ...playlist, deviceIds: newDeviceIds };
+        }
+        return playlist;
     });
+
     setCurrentPlaylists(newPlaylists);
   };
 
