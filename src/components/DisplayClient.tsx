@@ -2,7 +2,6 @@
 'use client'
 
 import * as React from 'react'
-import Image from 'next/image'
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Carousel,
@@ -120,7 +119,7 @@ const FooterImage: React.FC<{ src: string }> = ({ src }) => {
     }
 
     return (
-        <Image
+        <img
             src={src}
             alt="Footer Image"
             width={80}
@@ -241,20 +240,10 @@ export default function DisplayClient({ playlistId }: { playlistId: string }) {
           <CarouselItem key={`${item.id}-${index}`} className="relative">
             <Card className="h-screen w-screen border-0 rounded-none bg-black flex items-center justify-center">
               <CardContent className="flex items-center justify-center p-0 w-full h-full">
-                {item.type.startsWith('image/') && item.type.includes('gif') && (
+                {item.type.startsWith('image/') && (
                     <img
                       src={item.src!}
                       alt={item.name}
-                      className="object-contain w-full h-full"
-                      data-ai-hint={item.dataAiHint}
-                    />
-                )}
-                {item.type.startsWith('image/') && !item.type.includes('gif') &&(
-                    <Image
-                      src={item.src!}
-                      alt={item.name}
-                      width={1920}
-                      height={1080}
                       className="object-contain w-full h-full"
                       data-ai-hint={item.dataAiHint}
                     />

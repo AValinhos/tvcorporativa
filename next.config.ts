@@ -13,15 +13,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
+        hostname: '**',
       },
       {
-        protocol: 'https',
-        hostname: 'br.freepik.com',
-        port: '',
-        pathname: '/**',
+        protocol: 'http',
+        hostname: '**',
       }
     ],
   },
