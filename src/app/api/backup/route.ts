@@ -10,6 +10,23 @@ const exposureFilePath = path.join(process.cwd(), 'src', 'lib', 'exposure.json')
 
 type BackupType = 'content' | 'visualization';
 
+async function readFileSafely(filePath: string): Promise<any> {
+    try {
+        const fileContent = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(fileContent);
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return []; // Retorna um array vazio se o arquivo de analytics não existir
+        }
+        if (filePath.endsWith('exposure.json')) {
+            return {}; // Retorna um objeto vazio se o arquivo de exposure não existir
+        }
+        console.error(`Error reading or parsing file: ${filePath}`, error);
+        throw new Error(`Falha ao ler o arquivo: ${path.basename(filePath)}`);
+    }
+}
+
+
 // Exportar Backup
 export async function GET(req: NextRequest) {
   try {
@@ -22,8 +39,8 @@ export async function GET(req: NextRequest) {
         fileContent = await fs.readFile(dataFilePath, 'utf-8');
         filename = 'content-backup.json';
     } else if (type === 'visualization') {
-        const analyticsData = JSON.parse(await fs.readFile(analyticsFilePath, 'utf-8'));
-        const exposureData = JSON.parse(await fs.readFile(exposureFilePath, 'utf-8'));
+        const analyticsData = await readFileSafely(analyticsFilePath);
+        const exposureData = await readFileSafely(exposureFilePath);
         fileContent = JSON.stringify({ analyticsData, exposureData }, null, 2);
         filename = 'visualization-backup.json';
     } else {
@@ -34,9 +51,9 @@ export async function GET(req: NextRequest) {
     headers.set('Content-Type', 'application/json');
     headers.set('Content-Disposition', `attachment; filename="${filename}"`);
     return new Response(fileContent, { headers });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error reading data file for export:', error);
-    return NextResponse.json({ message: 'Erro ao exportar dados.' }, { status: 500 });
+    return NextResponse.json({ message: `Erro ao exportar dados: ${error.message}` }, { status: 500 });
   }
 }
 
