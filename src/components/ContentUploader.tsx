@@ -10,14 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Link, Type, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { cn } from '@/lib/utils';
 
 type ContentType = 'image_video' | 'iframe' | 'text';
 
-interface ContentUploaderProps {
+interface ContentUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
   onContentSaved: () => void;
 }
 
-export default function ContentUploader({ onContentSaved }: ContentUploaderProps) {
+export default function ContentUploader({ onContentSaved, className }: ContentUploaderProps) {
   const [activeTab, setActiveTab] = useState<ContentType>('image_video');
   const [contentName, setContentName] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -126,7 +127,7 @@ export default function ContentUploader({ onContentSaved }: ContentUploaderProps
 
 
   return (
-    <Card className="sm:col-span-2 md:col-span-full lg:col-span-2 xl:col-span-2">
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>Uploader de Conteúdo</CardTitle>
         <CardDescription>Adicione novas mídias, iframes ou texto à sua biblioteca.</CardDescription>

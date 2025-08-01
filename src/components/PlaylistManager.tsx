@@ -255,7 +255,7 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
 
   if (isLoading) {
     return (
-      <Card className={cn("sm:col-span-2 md:col-span-full lg:col-span-2 xl:col-span-2 flex items-center justify-center h-96", className)}>
+      <Card className={cn("flex items-center justify-center h-96", className)}>
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </Card>
     );
@@ -266,7 +266,7 @@ export default function PlaylistManager({ mediaItems, playlists, onPlaylistUpdat
   ) || [];
 
   return (
-    <Card className={cn("sm:col-span-2 md:col-span-full lg:col-span-2 xl:col-span-2", className)}>
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>Editor de Playlist</CardTitle>
         <CardDescription>

@@ -278,8 +278,10 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
+          
+          <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-5">
 
-          <Card>
+             <Card className="lg:col-span-5">
               <CardHeader>
                   <CardTitle>Exposição de Conteúdo por Playlist</CardTitle>
                   <CardDescription>Métricas de visualização para cada uma das suas telas.</CardDescription>
@@ -339,9 +341,8 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
-          
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
-              <ContentUploader onContentSaved={fetchData} />
+
+              <ContentUploader onContentSaved={fetchData} className="lg:col-span-2" />
               <PlaylistManager 
                 className="lg:col-span-3"
                 mediaItems={mediaItems} 
@@ -380,5 +381,4 @@ export default function Dashboard() {
     </AuthGuard>
   );
 }
-
 
