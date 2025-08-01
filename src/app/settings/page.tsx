@@ -548,5 +548,3 @@ export default function SettingsPage() {
         </AlertDialog>
       </main>
   );
-
-    

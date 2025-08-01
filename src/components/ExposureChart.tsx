@@ -44,6 +44,8 @@ export default function ExposureChart() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
         const [exposureRes, dataRes] = await Promise.all([
           fetch('/api/exposure'),
@@ -101,7 +103,7 @@ export default function ExposureChart() {
   const chartConfig = {
     views: {
       label: 'Visualizações',
-      color: 'hsl(var(--chart-1))',
+      color: 'hsl(var(--primary))',
     },
   };
 
@@ -124,7 +126,7 @@ export default function ExposureChart() {
         accessibilityLayer
         data={chartData}
         layout="vertical"
-        margin={{ left: 10 }}
+        margin={{ left: 10, right: 10 }}
       >
         <CartesianGrid horizontal={false} />
         <YAxis
@@ -139,7 +141,7 @@ export default function ExposureChart() {
         <XAxis dataKey="views" type="number" hide />
         <ChartTooltip
           cursor={false}
-          content={<ChartTooltipContent indicator="line" />}
+          content={<ChartTooltipContent indicator="line" labelKey='views'/>}
         />
         <Bar dataKey="views" fill="var(--color-views)" radius={4} />
       </BarChart>
