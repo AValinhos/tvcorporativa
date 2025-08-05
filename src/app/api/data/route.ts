@@ -12,9 +12,18 @@ async function readData() {
   try {
     const fileContent = await fs.readFile(dataFilePath, 'utf-8');
     const data = JSON.parse(fileContent);
-    // Initialize devices and deviceIds on playlists if they don't exist
+    // Initialize parts of the data if they don't exist
     if (!data.devices) {
       data.devices = [];
+    }
+    if (!data.playlists) {
+      data.playlists = [];
+    }
+     if (!data.mediaItems) {
+      data.mediaItems = [];
+    }
+     if (!data.users) {
+      data.users = [];
     }
     data.playlists.forEach((p: any) => {
         if (!p.deviceIds) {
@@ -23,7 +32,14 @@ async function readData() {
     });
     return data;
   } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      // If file doesn't exist, create it with a default structure
+      const defaultData = { users: [{user: "admin", password: "password"}], mediaItems: [], playlists: [], devices: [] };
+      await writeData(defaultData);
+      return defaultData;
+    }
     console.error('Error reading data file:', error);
+    // Return a default structure in case of other errors
     return { users: [], mediaItems: [], playlists: [], devices: [] };
   }
 }
@@ -59,15 +75,17 @@ export async function POST(req: NextRequest) {
     let analyticsShouldUpdate = false;
 
     if (body.action === 'GET_DASHBOARD_DATA') {
-        await updateAnalytics(req);
-        const [allData, analyticsData, exposureData] = await Promise.all([
-            readData(),
+        // We don't want to expose passwords to the client
+        const clientSafeUsers = data.users.map((u: any) => ({ user: u.user }));
+
+        const [analyticsData, exposureData] = await Promise.all([
             fs.readFile(analyticsFilePath, 'utf-8').then(JSON.parse).catch(() => []),
             fs.readFile(exposureFilePath, 'utf-8').then(JSON.parse).catch(() => ({}))
         ]);
 
         return NextResponse.json({ 
-            ...allData,
+            ...data,
+            users: clientSafeUsers,
             analyticsData, 
             exposureData
         }, { status: 200 });
@@ -79,8 +97,36 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Dados de visualização limpos com sucesso.' }, { status: 200 });
     }
 
-    // --- Other actions ---
-    if (body.action === 'CREATE_MEDIA') {
+    // --- User Actions ---
+    if (body.action === 'CREATE_USER') {
+        const { user, password } = body.payload;
+        if (data.users.find((u: any) => u.user === user)) {
+             return NextResponse.json({ message: 'Usuário já existe.' }, { status: 409 });
+        }
+        data.users.push({ user, password });
+    } else if (body.action === 'UPDATE_USER') {
+        const { originalUser, user, password } = body.payload;
+        const userIndex = data.users.findIndex((u: any) => u.user === originalUser);
+        if (userIndex === -1) {
+            return NextResponse.json({ message: 'Usuário original não encontrado.' }, { status: 404 });
+        }
+        if (user !== originalUser && data.users.find((u: any) => u.user === user)) {
+            return NextResponse.json({ message: 'Novo nome de usuário já está em uso.' }, { status: 409 });
+        }
+        data.users[userIndex].user = user;
+        // Only update password if a new one is provided
+        if (password) {
+            data.users[userIndex].password = password;
+        }
+    } else if (body.action === 'DELETE_USER') {
+        const { user } = body.payload;
+        if (data.users.length <= 1) {
+             return NextResponse.json({ message: 'Não é possível excluir o único usuário.' }, { status: 400 });
+        }
+        data.users = data.users.filter((u: any) => u.user !== user);
+    }
+    // --- Media Actions ---
+    else if (body.action === 'CREATE_MEDIA') {
       data.mediaItems.push(body.payload);
     } else if (body.action === 'UPDATE_MEDIA') {
       data.mediaItems = data.mediaItems.map((item: any) =>
@@ -101,7 +147,9 @@ export async function POST(req: NextRequest) {
             playlist.items = playlist.items.filter((item: any) => !idsToDelete.includes(item.mediaId));
             if(playlist.items.length !== initialLength) analyticsShouldUpdate = true;
         });
-    } else if (body.action === 'CREATE_PLAYLIST') {
+    } 
+    // --- Playlist Actions ---
+    else if (body.action === 'CREATE_PLAYLIST') {
       const newId = data.playlists.length > 0
           ? String(Math.max(...data.playlists.map((p: any) => Number(p.id) || 0)) + 1)
           : '1';
@@ -134,7 +182,9 @@ export async function POST(req: NextRequest) {
             analyticsShouldUpdate = true;
         }
         data.playlists = data.playlists.filter((p:any) => p.id !== body.payload.id);
-    } else if (body.action === 'CREATE_DEVICE') {
+    } 
+    // --- Device Actions ---
+    else if (body.action === 'CREATE_DEVICE') {
         const newId = data.devices.length > 0
           ? String(Math.max(...data.devices.map((d: any) => Number(d.id) || 0)) + 1)
           : '1';
@@ -166,7 +216,9 @@ export async function POST(req: NextRequest) {
         await updateAnalytics(req);
     }
 
-    return NextResponse.json({ message: 'Dados atualizados com sucesso', data }, { status: 200 });
+    // Don't send passwords back to the client
+    const clientSafeData = { ...data, users: data.users.map((u:any) => ({user: u.user}))};
+    return NextResponse.json({ message: 'Dados atualizados com sucesso', data: clientSafeData }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ message: 'Erro ao processar a ação', error: error.message }, { status: 500 });
   }

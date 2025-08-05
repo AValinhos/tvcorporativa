@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX } from 'lucide-react';
+import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX, Users } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import ExposureChart from '@/components/ExposureChart';
@@ -59,6 +59,11 @@ interface Playlist {
   name: string;
 }
 
+interface User {
+    user: string;
+    // Password is not sent to the client for security
+}
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
@@ -71,10 +76,13 @@ export default function SettingsPage() {
   const [exportType, setExportType] = useState<BackupType>('content');
   const [importType, setImportType] = useState<BackupType>('content');
   
-  // Device Management State
+  // Data State
   const [devices, setDevices] = useState<Device[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Device Management State
   const [isDeviceDialogOpen, setIsDeviceDialogOpen] = useState(false);
   const [isProcessingDevice, setIsProcessingDevice] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
@@ -82,11 +90,18 @@ export default function SettingsPage() {
   const [devicePlaylistId, setDevicePlaylistId] = useState('');
   const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
 
+  // User Management State
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [isProcessingUser, setIsProcessingUser] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
 
   const fetchPageData = async () => {
     setIsLoading(true);
     try {
-        // Only fetching device and playlist data now.
         const res = await fetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -96,6 +111,7 @@ export default function SettingsPage() {
         const data = await res.json();
         setDevices(data.devices || []);
         setPlaylists(data.playlists || []);
+        setUsers(data.users || []);
     } catch (error) {
         toast({ variant: 'destructive', title: 'Erro', description: (error as Error).message });
     } finally {
@@ -300,7 +316,80 @@ export default function SettingsPage() {
     } finally {
       setIsProcessingDevice(false);
     }
+  };
+
+  // --- User Management Handlers ---
+  const handleOpenUserDialog = (user: User | null) => {
+    setEditingUser(user);
+    setUsername(user?.user || '');
+    setPassword(''); // Always clear password field for security
+    setIsUserDialogOpen(true);
+  };
+
+  const handleSaveUser = async () => {
+    if (!username.trim()) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'O nome de usuário é obrigatório.' });
+        return;
+    }
+    if (!editingUser && !password.trim()) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'A senha é obrigatória para novos usuários.' });
+        return;
+    }
+
+    setIsProcessingUser(true);
+    const action = editingUser ? 'UPDATE_USER' : 'CREATE_USER';
+    const payload = {
+        user: username,
+        password, // Password can be empty for updates if not changed
+        originalUser: editingUser?.user 
+    };
+    
+    try {
+        const res = await fetch('/api/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, payload }),
+        });
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || `Falha ao ${editingUser ? 'atualizar' : 'criar'} usuário.`);
+        }
+        toast({ title: 'Sucesso', description: `Usuário ${editingUser ? 'atualizado' : 'criado'}.` });
+        fetchPageData(); // Refresh user list
+        setIsUserDialogOpen(false);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    } finally {
+        setIsProcessingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    if (users.length <= 1) {
+        toast({ variant: 'destructive', title: 'Ação não permitida', description: 'Não é possível excluir o único usuário do sistema.' });
+        setUserToDelete(null);
+        return;
+    }
+
+    setIsProcessingUser(true);
+    try {
+      await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'DELETE_USER', payload: { user: userToDelete.user } }),
+      });
+      toast({ title: 'Sucesso', description: 'Usuário deletado.' });
+      fetchPageData();
+      setUserToDelete(null);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    } finally {
+      setIsProcessingUser(false);
+    }
   }
+
 
   return (
     <main className="flex-1 p-4 md:p-8">
@@ -318,7 +407,7 @@ export default function SettingsPage() {
                     <SelectValue placeholder="Selecione o tipo de backup" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="content">Conteúdo (Mídias, Playlists, Dispositivos)</SelectItem>
+                    <SelectItem value="content">Conteúdo (Mídias, Playlists, Dispositivos, Usuários)</SelectItem>
                     <SelectItem value="visualization">Dados de Visualização</SelectItem>
                 </SelectContent>
             </Select>
@@ -378,7 +467,7 @@ export default function SettingsPage() {
               </CardContent>
           </Card>
       </div>
-      
+
        <div className="grid gap-6 mb-6">
           <Card>
               <CardHeader>
@@ -443,6 +532,62 @@ export default function SettingsPage() {
           </Card>
       </div>
 
+      <div className="grid gap-6 mb-6">
+          <Card>
+              <CardHeader>
+                  <div className="flex justify-between items-center">
+                      <div>
+                          <CardTitle>Gerenciamento de Usuários</CardTitle>
+                          <CardDescription>Crie, edite e delete usuários administradores do sistema.</CardDescription>
+                      </div>
+                      <Button onClick={() => handleOpenUserDialog(null)}>
+                          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Usuário
+                      </Button>
+                  </div>
+              </CardHeader>
+              <CardContent>
+                   {isLoading ? (
+                      <div className="flex justify-center items-center h-24">
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                   ): (
+                      <Table>
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead className='flex items-center gap-2'><Users className="h-4 w-4" /> Nome de Usuário</TableHead>
+                                  <TableHead className='text-right'><span className="sr-only">Ações</span></TableHead>
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {users.map(user => (
+                                  <TableRow key={user.user}>
+                                      <TableCell className="font-medium">{user.user}</TableCell>
+                                      <TableCell className="text-right">
+                                           <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
+                                                  <Button variant="ghost" size="icon">
+                                                      <MoreVertical className="h-4 w-4" />
+                                                  </Button>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent>
+                                                  <DropdownMenuItem onSelect={() => handleOpenUserDialog(user)}>
+                                                      <Edit className="mr-2 h-4 w-4" /> Editar
+                                                  </DropdownMenuItem>
+                                                  <DropdownMenuItem className="text-destructive" onSelect={() => setUserToDelete(user)}>
+                                                      <Trash2 className="mr-2 h-4 w-4" /> Deletar
+                                                  </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                          </DropdownMenu>
+                                      </TableCell>
+                                  </TableRow>
+                              ))}
+                          </TableBody>
+                      </Table>
+                   )}
+              </CardContent>
+          </Card>
+      </div>
+
       <div className="grid gap-6 mb-8">
         <Card>
           <CardHeader>
@@ -458,6 +603,7 @@ export default function SettingsPage() {
         </Card>
       </div>
 
+      {/* --- DIALOGS & ALERTS --- */}
       <Dialog open={isDeviceDialogOpen} onOpenChange={setIsDeviceDialogOpen}>
           <DialogContent>
               <DialogHeader>
@@ -486,6 +632,33 @@ export default function SettingsPage() {
                   <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
                   <Button onClick={handleSaveDevice} disabled={isProcessingDevice}>
                       {isProcessingDevice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Salvar"}
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>{editingUser ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
+                  <DialogDescription>
+                    {editingUser ? 'Altere o nome de usuário ou a senha. Deixe a senha em branco para não alterá-la.' : 'Crie um novo usuário e senha de administrador.'}
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                      <Label htmlFor="username">Nome de Usuário</Label>
+                      <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Ex: admin2"/>
+                  </div>
+                   <div className="grid gap-2">
+                      <Label htmlFor="password">Senha</Label>
+                      <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={editingUser ? 'Deixe em branco para não alterar' : '••••••••'} />
+                  </div>
+              </div>
+              <DialogFooter>
+                  <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                  <Button onClick={handleSaveUser} disabled={isProcessingUser}>
+                      {isProcessingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Salvar"}
                   </Button>
               </DialogFooter>
           </DialogContent>
@@ -539,6 +712,23 @@ export default function SettingsPage() {
                   <AlertDialogCancel onClick={() => setDeviceToDelete(null)}>Cancelar</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDeleteDevice} disabled={isProcessingDevice} className="bg-destructive hover:bg-destructive/90">
                      {isProcessingDevice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Deletar"}
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
+       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. O usuário "{userToDelete?.user}" será removido permanentemente.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteUser} disabled={isProcessingUser} className="bg-destructive hover:bg-destructive/90">
+                     {isProcessingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Deletar"}
                   </AlertDialogAction>
               </AlertDialogFooter>
           </AlertDialogContent>

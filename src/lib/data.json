@@ -164,7 +164,9 @@
           "duration": 10
         }
       ],
-      "deviceIds": []
+      "deviceIds": [
+        "1"
+      ]
     },
     {
       "id": "2",
