@@ -163,11 +163,11 @@ export async function POST(req: NextRequest) {
       const { id, updates } = body.payload;
       data.playlists = data.playlists.map((p: any) => {
         if (p.id === id) {
+          analyticsShouldUpdate = true;
           return { ...p, ...updates };
         }
         return p;
       });
-      analyticsShouldUpdate = true;
     } else if (body.action === 'DELETE_PLAYLIST') {
         const playlistToDelete = data.playlists.find((p:any) => p.id === body.payload.id);
         if (playlistToDelete && playlistToDelete.deviceIds && playlistToDelete.deviceIds.length > 0) {
@@ -182,6 +182,7 @@ export async function POST(req: NextRequest) {
           : '1';
         const newDevice = { ...body.payload, id: newId };
         data.devices.push(newDevice);
+        analyticsShouldUpdate = true;
     } else if (body.action === 'UPDATE_DEVICE') {
         const device = data.devices.find((d: any) => d.id === body.payload.id);
         if (device && device.playlistId !== body.payload.updates.playlistId) {
@@ -215,3 +216,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Erro ao processar a ação', error: error.message }, { status: 500 });
   }
 }
+
+    
