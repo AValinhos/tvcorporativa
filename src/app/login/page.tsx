@@ -13,32 +13,50 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tv } from "lucide-react"
+import { Tv, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
-import data from '@/lib/data.json';
 import { useAuth } from "@/components/AuthProvider";
 
 export default function LoginPage() {
   const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { login } = useAuth();
 
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const foundUser = data.users.find(u => u.user === user && u.password === password);
+    setIsLoading(true);
 
-    if (foundUser) {
-      login();
-      router.push('/');
-    } else {
-      toast({
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        login();
+        router.push('/');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Falha no Login",
+          description: data.message || "Usuário ou senha inválidos.",
+        });
+      }
+    } catch (error) {
+       toast({
         variant: "destructive",
-        title: "Falha no Login",
-        description: "Usuário ou senha inválidos.",
-      })
+        title: "Erro de Conexão",
+        description: "Não foi possível conectar ao servidor. Tente novamente.",
+      });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -68,6 +86,7 @@ export default function LoginPage() {
                   required
                   value={user}
                   onChange={(e) => setUser(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               <div className="grid gap-2">
@@ -83,12 +102,14 @@ export default function LoginPage() {
                   required 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" disabled>
                 Login com Single Sign-On
               </Button>
             </div>

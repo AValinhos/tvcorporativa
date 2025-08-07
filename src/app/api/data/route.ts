@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         if (userIndex === -1) {
             return NextResponse.json({ message: 'Usuário original não encontrado.' }, { status: 404 });
         }
-        if (user !== originalUser && data.users.find((u: any) => u.user === user)) {
+        if (user !== originalUser && data.users.some((u: any) => u.user === user)) {
             return NextResponse.json({ message: 'Novo nome de usuário já está em uso.' }, { status: 409 });
         }
         data.users[userIndex].user = user;
