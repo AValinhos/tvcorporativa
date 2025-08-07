@@ -252,7 +252,8 @@
       "deviceIds": [
         "3"
       ],
-      "id": "4"
+      "id": "4",
+      "transition": "fade"
     }
   ],
   "devices": [

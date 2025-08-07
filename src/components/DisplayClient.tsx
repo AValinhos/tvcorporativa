@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/carousel"
 import { Loader2 } from 'lucide-react'
 import Fade from 'embla-carousel-fade'
+import { cn } from '@/lib/utils'
 
 
 interface MediaItem {
@@ -288,13 +289,13 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
   return (
     <Carousel 
         setApi={setApi} 
-        className="w-full h-full" 
+        className={cn("w-full h-full", playlist.transition === 'fade' && 'embla embla--fade')} 
         opts={{loop: true}}
         plugins={playlist.transition === 'fade' ? carouselPlugins.current : []}
     >
-      <CarouselContent>
+      <CarouselContent className="embla__container">
         {playlist.items.map((item, index) => (
-          <CarouselItem key={`${item.id}-${index}`} className="relative">
+          <CarouselItem key={`${item.id}-${index}`} className="relative embla__slide">
             <Card className="h-screen w-screen border-0 rounded-none bg-black flex items-center justify-center">
               <CardContent className="flex items-center justify-center p-0 w-full h-full">
                 {item.type.startsWith('image/') && (

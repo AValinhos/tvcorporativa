@@ -70,3 +70,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.embla.embla--fade .embla__slide {
+  transition: opacity 1000ms ease-in-out;
+}
