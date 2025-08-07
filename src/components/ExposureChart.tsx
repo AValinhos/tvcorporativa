@@ -17,6 +17,7 @@ import {
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
+  type ChartConfig,
 } from '@/components/ui/chart';
 import { Loader2 } from 'lucide-react';
 
@@ -124,7 +125,7 @@ export default function ExposureChart() {
       label: 'Visualizações',
       color: 'hsl(var(--primary))',
     },
-  };
+  } satisfies ChartConfig;
 
   if (isLoading) {
     return (
@@ -150,13 +151,13 @@ export default function ExposureChart() {
 
   return (
     <div style={{ height: `${chartHeight}px`, minHeight: '200px' }}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ChartContainer config={chartConfig} className="w-full h-full">
         <BarChart
             accessibilityLayer
             data={chartData}
             layout="vertical"
             margin={{ left: 10, right: 30, top: 10, bottom: 10 }}
-            barCategoryGap="-15%"
+            barCategoryGap="20%"
         >
             <XAxis type="number" hide />
             <YAxis
@@ -168,14 +169,14 @@ export default function ExposureChart() {
             width={120}
             tickFormatter={(value) => value.slice(0, 15) + (value.length > 15 ? '...' : '')}
             />
-            <Tooltip
+            <ChartTooltip
             cursor={{ fill: 'hsl(var(--muted))' }}
             content={<ChartTooltipContent indicator="line" />}
             />
             <Legend content={<ChartLegendContent />} />
-            <Bar dataKey="views" radius={4} fill="var(--color-views)" barSize={20} />
+            <Bar dataKey="views" radius={4} fill="var(--color-views)" barSize={32} />
         </BarChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }
