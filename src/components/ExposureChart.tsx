@@ -1,15 +1,12 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
 import {
   ChartContainer,
@@ -41,11 +38,6 @@ interface Playlist {
   deviceIds?: string[];
 }
 
-interface ChartDataPoint {
-  name: string;
-  views: number;
-}
-
 interface DeviceView {
     id: string;
     name: string;
@@ -53,18 +45,15 @@ interface DeviceView {
 }
 
 
-export default function ExposureChart() {
+const ExposureChart = forwardRef((props, ref) => {
   const [exposureData, setExposureData] = useState<ExposureData | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async (isInitialLoad = false) => {
-      if (isInitialLoad) {
-        setIsLoading(true);
-      }
+  const fetchData = async () => {
+      setIsLoading(true);
       setError(null);
       try {
         const [exposureRes, dataRes] = await Promise.all([
@@ -89,19 +78,18 @@ export default function ExposureChart() {
       } catch (err: any) {
         setError(err.message);
       } finally {
-        if (isInitialLoad) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
+  
+  // Expose the fetchData function to the parent component via ref
+  useImperativeHandle(ref, () => ({
+    fetchData
+  }));
 
-    fetchData(true);
 
-    const interval = setInterval(() => {
-      fetchData();
-    }, 60000);
-
-    return () => clearInterval(interval);
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const chartData = useMemo(() => {
@@ -109,26 +97,36 @@ export default function ExposureChart() {
 
     const deviceViewsMap = new Map<string, DeviceView>();
 
-    // Inicializa o mapa com todos os dispositivos
+    // Initialize the map with all devices
     devices.forEach(d => {
         deviceViewsMap.set(d.id, { id: d.id, name: d.name, views: 0 });
     });
 
-    // Itera sobre as playlists para agregar visualizações
+    // Iterate over playlists to aggregate views
     playlists.forEach(playlist => {
         const playlistTotalViews = playlist.items.reduce((acc, item) => {
             const views = exposureData[item.mediaId] || 0;
             return acc + (Number(views) || 0);
         }, 0);
         
+        // This handles both the old `playlistId` on device and the new `deviceIds` on playlist
+        const associatedDeviceIds = new Set<string>();
         if (playlist.deviceIds) {
-            playlist.deviceIds.forEach(deviceId => {
-                const device = deviceViewsMap.get(deviceId);
-                if (device) {
-                    device.views += playlistTotalViews;
-                }
-            });
+            playlist.deviceIds.forEach(id => associatedDeviceIds.add(id));
         }
+        devices.forEach(device => {
+            if (device.playlistId === playlist.id) {
+                associatedDeviceIds.add(device.id);
+            }
+        });
+
+
+        associatedDeviceIds.forEach(deviceId => {
+            const device = deviceViewsMap.get(deviceId);
+            if (device) {
+                device.views += playlistTotalViews;
+            }
+        });
     });
     
     const data = Array.from(deviceViewsMap.values()).sort((a,b) => b.views - a.views);
@@ -195,4 +193,8 @@ export default function ExposureChart() {
         </ChartContainer>
     </div>
   );
-}
+});
+
+ExposureChart.displayName = 'ExposureChart';
+
+export default ExposureChart;

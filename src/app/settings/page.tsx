@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX, Users, Settings } from 'lucide-react';
+import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX, Users, Settings, RefreshCw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import ExposureChart from '@/components/ExposureChart';
@@ -81,6 +81,7 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [exportType, setExportType] = useState<BackupType>('content');
   const [importType, setImportType] = useState<BackupType>('content');
+  const exposureChartRef = useRef<{ fetchData: () => void }>(null);
   
   // Data State
   const [devices, setDevices] = useState<Device[]>([]);
@@ -417,6 +418,11 @@ export default function SettingsPage() {
       }
   };
 
+  const handleRefreshChart = () => {
+    exposureChartRef.current?.fetchData();
+  };
+
+
   return (
     <main className="flex-1 p-4 md:p-8">
       <div className="grid gap-6 mb-8">
@@ -645,15 +651,21 @@ export default function SettingsPage() {
       {appSettings.enableAnalytics && (
           <div className="grid gap-6 mb-8">
             <Card>
-              <CardHeader>
-                <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
-                <CardDescription>
-                  Gráfico mostrando o total de visualizações de conteúdo por
-                  dispositivo.
-                </CardDescription>
+              <CardHeader className='flex flex-row items-center justify-between'>
+                <div>
+                    <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
+                    <CardDescription>
+                    Gráfico mostrando o total de visualizações de conteúdo por
+                    dispositivo.
+                    </CardDescription>
+                </div>
+                <Button variant="outline" size="icon" onClick={handleRefreshChart}>
+                    <RefreshCw className="h-4 w-4" />
+                    <span className="sr-only">Atualizar Gráfico</span>
+                </Button>
               </CardHeader>
               <CardContent className="p-6 pt-0">
-                <ExposureChart />
+                <ExposureChart ref={exposureChartRef} />
               </CardContent>
             </Card>
           </div>
