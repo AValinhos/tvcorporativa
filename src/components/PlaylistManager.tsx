@@ -316,12 +316,14 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                         variant="outline"
                         role="combobox"
                         aria-expanded={openDeviceSelector}
-                        className="w-full sm:w-[200px] justify-between"
+                        className="w-full sm:w-[250px] justify-between h-auto min-h-10 whitespace-normal py-2"
                         disabled={!selectedPlaylist}
                     >
-                       {devicesForSelectedPlaylist.length > 0
-                        ? `${devicesForSelectedPlaylist.length} dispositivo(s) selecionado(s)`
-                        : "Associar a Dispositivos"}
+                        <span className="flex-1 text-left">
+                           {devicesForSelectedPlaylist.length > 0
+                            ? `${devicesForSelectedPlaylist.length} dispositivo(s) selecionado(s)`
+                            : "Associar a Dispositivos"}
+                        </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
@@ -465,12 +467,12 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
             </div>
         )}
       </CardContent>
-       <CardFooter className="border-t px-6 py-4 flex items-center justify-between">
+       <CardFooter className="border-t px-6 py-4 flex items-center justify-between flex-wrap gap-2">
         <Button onClick={handleSaveChanges} disabled={isSaving || !selectedPlaylist}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Salvar Playlist
         </Button>
-        {devicesForSelectedPlaylist.length > 0 && (
+        {devicesForSelectedPlaylist.length > 0 && selectedPlaylist && (
             <Link href={`/display/${devicesForSelectedPlaylist[0]}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
                 URL de Exibição: /display/{devicesForSelectedPlaylist[0]}
             </Link>
