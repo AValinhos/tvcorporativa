@@ -148,6 +148,13 @@
       "footerText2": "ti",
       "footerBgColor": "#851e1e",
       "footerImageSrc": "https://static.vecteezy.com/system/resources/previews/047/656/219/non_2x/abstract-logo-design-for-any-corporate-brand-business-company-vector.jpg"
+    },
+    {
+      "id": "1754573516105",
+      "name": "iframe 01",
+      "date": "2025-08-07",
+      "type": "Iframe",
+      "src": "<iframe title=\"Ordens de Serviço\" width=\"1140\" height=\"541.25\" src=\"https://app.powerbi.com/reportEmbed?reportId=6db0a243-959d-49c8-9ffd-17c34f5ed695&autoAuth=true&ctid=edbab98b-e8fe-47e2-b982-e3450132bf4c\" frameborder=\"0\" allowFullScreen=\"true\"></iframe>"
     }
   ],
   "playlists": [
@@ -201,7 +208,9 @@
           "duration": 10
         }
       ],
-      "deviceIds": []
+      "deviceIds": [
+        "1"
+      ]
     },
     {
       "id": "3",
@@ -216,7 +225,9 @@
           "duration": 10
         }
       ],
-      "deviceIds": []
+      "deviceIds": [
+        "1"
+      ]
     }
   ],
   "devices": [

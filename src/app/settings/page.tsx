@@ -279,8 +279,8 @@ export default function SettingsPage() {
   };
 
   const handleSaveDevice = async () => {
-    if (!deviceName || !devicePlaylistId) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Nome do dispositivo e playlist são obrigatórios.' });
+    if (!deviceName) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'O nome do dispositivo é obrigatório.' });
         return;
     }
 
@@ -674,7 +674,7 @@ export default function SettingsPage() {
                       <Label htmlFor="device-playlist">Playlist</Label>
                       <Select value={devicePlaylistId} onValueChange={setDevicePlaylistId}>
                           <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma playlist" />
+                              <SelectValue placeholder="Selecione uma playlist (opcional)" />
                           </SelectTrigger>
                           <SelectContent>
                               {playlists.map(p => (
