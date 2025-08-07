@@ -28,7 +28,6 @@ interface ExposureData {
 interface Device {
   id: string;
   name: string;
-  playlistId: string;
 }
 
 interface PlaylistItem {
@@ -39,12 +38,20 @@ interface Playlist {
   id: string;
   name: string;
   items: PlaylistItem[];
+  deviceIds?: string[];
 }
 
 interface ChartDataPoint {
   name: string;
   views: number;
 }
+
+interface DeviceView {
+    id: string;
+    name: string;
+    views: number;
+}
+
 
 export default function ExposureChart() {
   const [exposureData, setExposureData] = useState<ExposureData | null>(null);
@@ -100,22 +107,31 @@ export default function ExposureChart() {
   const chartData = useMemo(() => {
     if (!exposureData || !devices.length || !playlists.length) return [];
 
-    const data: ChartDataPoint[] = devices.map((device) => {
-      const playlist = playlists.find((p) => p.id === device.playlistId);
-      let totalViews = 0;
+    const deviceViewsMap = new Map<string, DeviceView>();
 
-      if (playlist && playlist.items) {
-        totalViews = playlist.items.reduce((acc, item) => {
-          const views = exposureData[item.mediaId] || 0;
-          return acc + (Array.isArray(views) ? views.length : Number(views) || 0);
+    // Inicializa o mapa com todos os dispositivos
+    devices.forEach(d => {
+        deviceViewsMap.set(d.id, { id: d.id, name: d.name, views: 0 });
+    });
+
+    // Itera sobre as playlists para agregar visualizações
+    playlists.forEach(playlist => {
+        const playlistTotalViews = playlist.items.reduce((acc, item) => {
+            const views = exposureData[item.mediaId] || 0;
+            return acc + (Number(views) || 0);
         }, 0);
-      }
-
-      return {
-        name: device.name,
-        views: totalViews,
-      };
-    }).sort((a, b) => b.views - a.views);
+        
+        if (playlist.deviceIds) {
+            playlist.deviceIds.forEach(deviceId => {
+                const device = deviceViewsMap.get(deviceId);
+                if (device) {
+                    device.views += playlistTotalViews;
+                }
+            });
+        }
+    });
+    
+    const data = Array.from(deviceViewsMap.values()).sort((a,b) => b.views - a.views);
 
     return data;
   }, [exposureData, devices, playlists]);
@@ -151,32 +167,32 @@ export default function ExposureChart() {
 
   return (
     <div style={{ height: `${chartHeight}px`, minHeight: '200px' }}>
-      <ChartContainer config={chartConfig} className="w-full h-full">
-        <BarChart
-            accessibilityLayer
-            data={chartData}
-            layout="vertical"
-            margin={{ left: 10, right: 30, top: 10, bottom: 10 }}
-            barCategoryGap="20%"
-        >
-            <XAxis type="number" hide />
-            <YAxis
-            dataKey="name"
-            type="category"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={10}
-            width={120}
-            tickFormatter={(value) => value.slice(0, 15) + (value.length > 15 ? '...' : '')}
-            />
-            <ChartTooltip
-            cursor={{ fill: 'hsl(var(--muted))' }}
-            content={<ChartTooltipContent indicator="line" />}
-            />
-            <Legend content={<ChartLegendContent />} />
-            <Bar dataKey="views" radius={4} fill="var(--color-views)" barSize={32} />
-        </BarChart>
-      </ChartContainer>
+        <ChartContainer config={chartConfig} className="w-full h-full">
+            <BarChart
+                accessibilityLayer
+                data={chartData}
+                layout="vertical"
+                margin={{ left: 10, right: 30, top: 10, bottom: 10 }}
+                barCategoryGap="20%"
+            >
+                <XAxis type="number" hide />
+                <YAxis
+                dataKey="name"
+                type="category"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={10}
+                width={120}
+                tickFormatter={(value) => value.slice(0, 15) + (value.length > 15 ? '...' : '')}
+                />
+                <ChartTooltip
+                cursor={{ fill: 'hsl(var(--muted))' }}
+                content={<ChartTooltipContent indicator="line" />}
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar dataKey="views" radius={4} fill="var(--color-views)" barSize={32} />
+            </BarChart>
+        </ChartContainer>
     </div>
   );
 }

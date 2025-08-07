@@ -243,6 +243,10 @@
         {
           "mediaId": "1754573516105",
           "duration": 10
+        },
+        {
+          "mediaId": "1753820733211",
+          "duration": 10
         }
       ],
       "deviceIds": [
@@ -269,6 +273,6 @@
     }
   ],
   "settings": {
-    "enableAnalytics": false
+    "enableAnalytics": true
   }
 }
