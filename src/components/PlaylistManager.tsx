@@ -316,7 +316,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                         variant="outline"
                         role="combobox"
                         aria-expanded={openDeviceSelector}
-                        className="w-full sm:w-[250px] justify-between h-auto min-h-10 whitespace-normal py-2"
+                        className="w-full sm:w-[280px] justify-between"
                         disabled={!selectedPlaylist}
                     >
                         <span className="flex-1 text-left">
@@ -327,7 +327,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[250px] p-0">
+                <PopoverContent className="w-[280px] p-0">
                    <Command>
                        <CommandInput placeholder="Buscar dispositivo..." />
                        <CommandEmpty>Nenhum dispositivo encontrado.</CommandEmpty>
