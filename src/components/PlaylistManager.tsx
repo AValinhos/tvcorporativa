@@ -48,6 +48,7 @@ interface FullPlaylistItem {
 
 interface Playlist extends PlaylistData {
   items: FullPlaylistItem[];
+  transition?: 'slide' | 'fade';
 }
 
 interface PlaylistManagerProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -80,6 +81,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
         const fullPlaylists = playlists.map(p => ({
             ...p,
             deviceIds: p.deviceIds || [],
+            transition: p.transition || 'slide',
             items: p.items.map(item => {
                 const media = mediaItems.find(m => m.id === item.mediaId);
                 return {
@@ -159,6 +161,12 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
     setCurrentPlaylists(newPlaylists);
   };
 
+  const handleTransitionChange = (value: 'slide' | 'fade') => {
+    if (!selectedPlaylist) return;
+    const updatedPlaylist = { ...selectedPlaylist, transition: value };
+    updatePlaylistInState(updatedPlaylist);
+  };
+
 
   const updatePlaylistInState = (updatedPlaylist: Playlist) => {
       const updatedPlaylists = currentPlaylists.map(p => p.id === updatedPlaylist.id ? updatedPlaylist : p);
@@ -199,7 +207,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
     }
     setIsProcessing(true);
     try {
-        const newPlaylistPayload = { name: newPlaylistName, items: [], deviceIds: [] };
+        const newPlaylistPayload = { name: newPlaylistName, items: [], deviceIds: [], transition: 'slide' };
         const res = await fetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -292,7 +300,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
       <CardContent className="grid gap-4">
         <div className="flex items-center gap-2 flex-wrap">
             <Select value={selectedPlaylistId} onValueChange={setSelectedPlaylistId} disabled={playlists.length === 0}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Selecione uma playlist" />
                 </SelectTrigger>
                 <SelectContent>
@@ -308,7 +316,7 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                         variant="outline"
                         role="combobox"
                         aria-expanded={openDeviceSelector}
-                        className="w-[250px] justify-between"
+                        className="w-full sm:w-[200px] justify-between"
                         disabled={!selectedPlaylist}
                     >
                        {devicesForSelectedPlaylist.length > 0
@@ -340,6 +348,20 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
                    </Command>
                 </PopoverContent>
             </Popover>
+
+            <Select 
+                value={selectedPlaylist?.transition || 'slide'} 
+                onValueChange={(value: 'slide' | 'fade') => handleTransitionChange(value)}
+                disabled={!selectedPlaylist}
+            >
+                <SelectTrigger className="w-full sm:w-[150px]">
+                    <SelectValue placeholder="Tipo de Transição" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="slide">Slide</SelectItem>
+                    <SelectItem value="fade">Fade</SelectItem>
+                </SelectContent>
+            </Select>
 
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>

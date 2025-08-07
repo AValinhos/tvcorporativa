@@ -10,6 +10,8 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 import { Loader2 } from 'lucide-react'
+import Fade from 'embla-carousel-fade'
+
 
 interface MediaItem {
   id: string;
@@ -36,25 +38,24 @@ interface PlaylistItemData {
 interface Playlist {
   id: string;
   name: string;
+  transition?: 'slide' | 'fade';
   items: (MediaItem & { duration: number })[];
 }
 
 interface Device {
     id: string;
     name: string;
-    playlistId: string; // This is not directly used anymore for display logic but kept for other parts
+    playlistId: string; 
 }
 
 interface AppSettings {
     enableAnalytics: boolean;
 }
 
-// New function to get a combined playlist from all playlists associated with a device
-const getCombinedPlaylistForDevice = (deviceId: string, allData: { mediaItems: MediaItem[], playlists: { id: string, name: string, items: PlaylistItemData[], deviceIds?: string[] }[], devices: Device[] }): Playlist | null => {
+const getCombinedPlaylistForDevice = (deviceId: string, allData: { mediaItems: MediaItem[], playlists: { id: string, name: string, items: PlaylistItemData[], deviceIds?: string[], transition?: 'slide' | 'fade' }[], devices: Device[] }): Playlist | null => {
     const associatedPlaylists = allData.playlists.filter(p => p.deviceIds?.includes(deviceId));
 
     if (associatedPlaylists.length === 0) {
-      // Fallback: check the device's own playlistId if it exists (for backward compatibility)
       const device = allData.devices.find(d => d.id === deviceId);
       if (!device || !device.playlistId) return null;
       const singlePlaylist = allData.playlists.find(p => p.id === device.playlistId);
@@ -63,7 +64,6 @@ const getCombinedPlaylistForDevice = (deviceId: string, allData: { mediaItems: M
     }
     
     if (associatedPlaylists.length === 0) return null;
-
 
     const combinedItems: (MediaItem & { duration: number })[] = [];
     
@@ -80,9 +80,13 @@ const getCombinedPlaylistForDevice = (deviceId: string, allData: { mediaItems: M
         combinedItems.push(...items);
     });
 
+    const primaryTransition = associatedPlaylists.find(p => p.transition === 'fade') ? 'fade' : 'slide';
+
+
     return {
         id: `device-${deviceId}-combined`,
         name: `Combined Playlist for Device ${deviceId}`,
+        transition: primaryTransition,
         items: combinedItems,
     };
 }
@@ -178,6 +182,8 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
   const [playlist, setPlaylist] = React.useState<Playlist | null>(null);
   const [appSettings, setAppSettings] = React.useState<AppSettings>({ enableAnalytics: true });
   const [isLoading, setIsLoading] = React.useState(true);
+
+  const carouselPlugins = React.useRef([Fade()]);
   
   React.useEffect(() => {
     if (deviceId && appSettings.enableAnalytics) {
@@ -280,7 +286,12 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
 
 
   return (
-    <Carousel setApi={setApi} className="w-full h-full" opts={{loop: true}}>
+    <Carousel 
+        setApi={setApi} 
+        className="w-full h-full" 
+        opts={{loop: true}}
+        plugins={playlist.transition === 'fade' ? carouselPlugins.current : []}
+    >
       <CarouselContent>
         {playlist.items.map((item, index) => (
           <CarouselItem key={`${item.id}-${index}`} className="relative">
