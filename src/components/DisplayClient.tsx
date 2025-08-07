@@ -42,30 +42,49 @@ interface Playlist {
 interface Device {
     id: string;
     name: string;
-    playlistId: string;
+    playlistId: string; // This is not directly used anymore for display logic but kept for other parts
 }
 
 interface AppSettings {
     enableAnalytics: boolean;
 }
 
-const getPlaylistByDeviceId = (deviceId: string, allData: { mediaItems: MediaItem[], playlists: { id: string, name: string, items: PlaylistItemData[] }[], devices: Device[] }): Playlist | null => {
-    const device = allData.devices.find(d => d.id === deviceId);
-    if (!device || !device.playlistId) return null;
+// New function to get a combined playlist from all playlists associated with a device
+const getCombinedPlaylistForDevice = (deviceId: string, allData: { mediaItems: MediaItem[], playlists: { id: string, name: string, items: PlaylistItemData[], deviceIds?: string[] }[], devices: Device[] }): Playlist | null => {
+    const associatedPlaylists = allData.playlists.filter(p => p.deviceIds?.includes(deviceId));
 
-    const playlistData = allData.playlists.find(p => p.id === device.playlistId);
-    if (!playlistData) return null;
+    if (associatedPlaylists.length === 0) {
+      // Fallback: check the device's own playlistId if it exists (for backward compatibility)
+      const device = allData.devices.find(d => d.id === deviceId);
+      if (!device || !device.playlistId) return null;
+      const singlePlaylist = allData.playlists.find(p => p.id === device.playlistId);
+      if (!singlePlaylist) return null;
+      associatedPlaylists.push(singlePlaylist);
+    }
+    
+    if (associatedPlaylists.length === 0) return null;
 
-    const items = playlistData.items.map(item => {
-        const media = allData.mediaItems.find(m => m.id === item.mediaId);
-        if (!media) return null;
-        return {
-        ...media,
-        duration: item.duration,
-        }
-    }).filter((item): item is MediaItem & { duration: number } => item !== null);
 
-    return { ...playlistData, items };
+    const combinedItems: (MediaItem & { duration: number })[] = [];
+    
+    associatedPlaylists.forEach(playlistData => {
+        const items = playlistData.items.map(item => {
+            const media = allData.mediaItems.find(m => m.id === item.mediaId);
+            if (!media) return null;
+            return {
+                ...media,
+                duration: item.duration,
+            }
+        }).filter((item): item is MediaItem & { duration: number } => item !== null);
+
+        combinedItems.push(...items);
+    });
+
+    return {
+        id: `device-${deviceId}-combined`,
+        name: `Combined Playlist for Device ${deviceId}`,
+        items: combinedItems,
+    };
 }
 
 
@@ -182,7 +201,7 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
         });
         if (!res.ok) throw new Error('Falha ao buscar dados');
         const allData = await res.json();
-        const foundPlaylist = getPlaylistByDeviceId(deviceId, allData);
+        const foundPlaylist = getCombinedPlaylistForDevice(deviceId, allData);
         setPlaylist(foundPlaylist);
         setAppSettings(allData.settings || { enableAnalytics: true });
         

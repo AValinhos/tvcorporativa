@@ -163,19 +163,7 @@ export async function POST(req: NextRequest) {
       const { id, updates } = body.payload;
       data.playlists = data.playlists.map((p: any) => {
         if (p.id === id) {
-          // Correctly merge updates without overwriting deviceIds unless specified
-          const currentDeviceIds = p.deviceIds || [];
-          const updatedDeviceIds = updates.deviceIds !== undefined ? updates.deviceIds : currentDeviceIds;
-          return { ...p, ...updates, deviceIds: updatedDeviceIds };
-        }
-    
-        // If deviceIds are being updated, remove them from other playlists
-        if (updates.deviceIds) {
-          updates.deviceIds.forEach((deviceId: string) => {
-            if (p.deviceIds && p.deviceIds.includes(deviceId)) {
-              p.deviceIds = p.deviceIds.filter((dId: string) => dId !== deviceId);
-            }
-          });
+          return { ...p, ...updates };
         }
         return p;
       });

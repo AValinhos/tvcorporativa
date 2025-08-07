@@ -1,3 +1,4 @@
+
 'use client'
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -142,18 +143,14 @@ export default function PlaylistManager({ mediaItems, playlists, devices, onPlay
   
   const handleDeviceSelection = (deviceId: string) => {
     if (!selectedPlaylistId) return;
-
+    
+    // Allows associating a device with multiple playlists
     const newPlaylists = currentPlaylists.map(playlist => {
-        // Un-assign from other playlists
-        if (playlist.id !== selectedPlaylistId && playlist.deviceIds?.includes(deviceId)) {
-            return { ...playlist, deviceIds: playlist.deviceIds.filter(id => id !== deviceId) };
-        }
-        // Assign/Un-assign from the selected playlist
         if (playlist.id === selectedPlaylistId) {
             const deviceIds = playlist.deviceIds || [];
             const newDeviceIds = deviceIds.includes(deviceId)
-                ? deviceIds.filter(id => id !== deviceId)
-                : [...deviceIds, deviceId];
+                ? deviceIds.filter(id => id !== deviceId) // Toggle: remove
+                : [...deviceIds, deviceId]; // Toggle: add
             return { ...playlist, deviceIds: newDeviceIds };
         }
         return playlist;
