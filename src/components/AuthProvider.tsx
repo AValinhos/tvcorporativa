@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && pathname !== '/login') {
+    if (!isLoading && !isAuthenticated && pathname !== '/login' && !pathname.startsWith('/display')) {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, pathname, router]);
@@ -50,8 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Permite o acesso à página de login mesmo sem autenticação
-  if (!isAuthenticated && pathname !== '/login') {
+  // Permite o acesso à página de login e de exibição mesmo sem autenticação
+  if (!isAuthenticated && pathname !== '/login' && !pathname.startsWith('/display')) {
     return (
         <div className="flex min-h-screen w-full items-center justify-center bg-muted/40">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />

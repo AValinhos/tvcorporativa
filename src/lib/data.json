@@ -154,7 +154,15 @@
       "name": "iframe 01",
       "date": "2025-08-07",
       "type": "Iframe",
-      "src": "<iframe title=\"Ordens de Serviço\" width=\"1140\" height=\"541.25\" src=\"https://app.powerbi.com/reportEmbed?reportId=6db0a243-959d-49c8-9ffd-17c34f5ed695&autoAuth=true&ctid=edbab98b-e8fe-47e2-b982-e3450132bf4c\" frameborder=\"0\" allowFullScreen=\"true\"></iframe>"
+      "src": "https://app.powerbi.com/view?r=eyJrIjoiMDdiN2QxYjQtYjliOC00N2IzLTg3ZjMtYmZhODk4ZmE0NjljIiwidCI6ImVkYmFiOThiLWU4ZmUtNDdlMi1iOTgyLWUzNDUwMTMyYmY0YyJ9",
+      "content": "",
+      "subContent": "",
+      "bgColor": "#228B22",
+      "showFooter": false,
+      "footerText1": "",
+      "footerText2": "",
+      "footerBgColor": "#dc2626",
+      "footerImageSrc": ""
     }
   ],
   "playlists": [
@@ -228,6 +236,19 @@
       "deviceIds": [
         "1"
       ]
+    },
+    {
+      "name": "teste iframe",
+      "items": [
+        {
+          "mediaId": "1754573516105",
+          "duration": 10
+        }
+      ],
+      "deviceIds": [
+        "3"
+      ],
+      "id": "4"
     }
   ],
   "devices": [
@@ -240,6 +261,11 @@
       "name": "Tv refeitório ",
       "playlistId": "2",
       "id": "2"
+    },
+    {
+      "name": "tv teste",
+      "playlistId": "",
+      "id": "3"
     }
   ],
   "settings": {
