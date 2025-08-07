@@ -63,7 +63,7 @@ async function readDataFile() {
         return JSON.parse(fileContent);
     } catch (error) {
         console.error('Error reading data file:', error);
-        return { playlists: [], devices: [] };
+        return { playlists: [], devices: [], settings: { enableAnalytics: true } };
     }
 }
 
@@ -77,6 +77,12 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const allData = await readDataFile();
+    
+    // Respeita a configuração de analytics
+    if (!allData.settings?.enableAnalytics) {
+        return NextResponse.json({ message: 'A coleta de analytics está desabilitada.' }, { status: 200 });
+    }
+
     const playlists: Playlist[] = allData.playlists || [];
     const devices: Device[] = allData.devices || [];
     

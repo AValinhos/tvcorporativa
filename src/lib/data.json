@@ -3,6 +3,10 @@
     {
       "user": "admin",
       "password": "Papel.123"
+    },
+    {
+      "user": "ROOT",
+      "password": "123456"
     }
   ],
   "mediaItems": [

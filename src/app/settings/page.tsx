@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX, Users } from 'lucide-react';
+import { Loader2, Download, Upload, PlusCircle, MoreVertical, Edit, Trash2, ShieldX, Users, Settings } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import ExposureChart from '@/components/ExposureChart';
+import { Switch } from '@/components/ui/switch';
+
 
 import {
   Table,
@@ -64,6 +66,10 @@ interface User {
     // Password is not sent to the client for security
 }
 
+interface AppSettings {
+    enableAnalytics: boolean;
+}
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
@@ -80,6 +86,7 @@ export default function SettingsPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [appSettings, setAppSettings] = useState<AppSettings>({ enableAnalytics: true });
   const [isLoading, setIsLoading] = useState(true);
 
   // Device Management State
@@ -112,6 +119,7 @@ export default function SettingsPage() {
         setDevices(data.devices || []);
         setPlaylists(data.playlists || []);
         setUsers(data.users || []);
+        setAppSettings(data.settings || { enableAnalytics: true });
     } catch (error) {
         toast({ variant: 'destructive', title: 'Erro', description: (error as Error).message });
     } finally {
@@ -390,9 +398,55 @@ export default function SettingsPage() {
     }
   }
 
+  const handleAnalyticsToggle = async (enabled: boolean) => {
+      setAppSettings({ ...appSettings, enableAnalytics: enabled });
+      try {
+          await fetch('/api/data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'UPDATE_SETTINGS', payload: { enableAnalytics: enabled } }),
+          });
+          toast({
+              title: 'Sucesso!',
+              description: `Coleta de dados de visualização ${enabled ? 'habilitada' : 'desabilitada'}.`,
+          });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível salvar a configuração.' });
+          // Reverte a alteração visual em caso de erro
+          setAppSettings({ ...appSettings, enableAnalytics: !enabled });
+      }
+  };
 
   return (
     <main className="flex-1 p-4 md:p-8">
+      <div className="grid gap-6 mb-8">
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5"/> Configurações Gerais</CardTitle>
+                <CardDescription>
+                    Ajustes globais para o comportamento da aplicação.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center space-x-4 rounded-md border p-4">
+                    <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                            Coleta de Dados de Visualização
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            Habilite para coletar e exibir dados de analytics e exposição de mídia.
+                        </p>
+                    </div>
+                    <Switch
+                        checked={appSettings.enableAnalytics}
+                        onCheckedChange={handleAnalyticsToggle}
+                        aria-label="Ativar/Desativar Analytics"
+                    />
+                </div>
+            </CardContent>
+        </Card>
+      </div>
+        
       <div className="grid gap-6 md:grid-cols-2 mb-8">
         <Card>
           <CardHeader>
@@ -588,20 +642,22 @@ export default function SettingsPage() {
           </Card>
       </div>
 
-      <div className="grid gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
-            <CardDescription>
-              Gráfico mostrando o total de visualizações de conteúdo por
-              dispositivo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6 pt-0">
-            <ExposureChart />
-          </CardContent>
-        </Card>
-      </div>
+      {appSettings.enableAnalytics && (
+          <div className="grid gap-6 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Análise de Exposição por Dispositivo</CardTitle>
+                <CardDescription>
+                  Gráfico mostrando o total de visualizações de conteúdo por
+                  dispositivo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                <ExposureChart />
+              </CardContent>
+            </Card>
+          </div>
+      )}
 
       {/* --- DIALOGS & ALERTS --- */}
       <Dialog open={isDeviceDialogOpen} onOpenChange={setIsDeviceDialogOpen}>

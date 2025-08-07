@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -113,7 +114,7 @@ export default function ExposureChart() {
         name: device.name,
         views: totalViews,
       };
-    }).sort((a, b) => a.views - b.views); // Sort ascending for horizontal bar chart
+    }).sort((a, b) => b.views - a.views);
 
     return data;
   }, [exposureData, devices, playlists]);
@@ -140,22 +141,21 @@ export default function ExposureChart() {
   if (chartData.length === 0) {
     return (
       <p className="text-center text-muted-foreground">
-        Nenhum dado de exposição encontrado.
+        Nenhum dado de exposição encontrado ou a coleta está desabilitada.
       </p>
     );
   }
   
-  const chartHeight = chartData.length * 50 + 50;
-
+  const chartHeight = Math.max(200, chartData.length * 60);
 
   return (
-    <ChartContainer config={chartConfig} className="w-full" style={{ height: `${chartHeight}px` }}>
-      <ResponsiveContainer>
+    <div style={{ height: `${chartHeight}px`, minHeight: '200px' }}>
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart
             accessibilityLayer
             data={chartData}
             layout="vertical"
-            margin={{ left: 10, right: 30 }}
+            margin={{ left: 10, right: 30, top: 10, bottom: 10 }}
             barCategoryGap="-15%"
         >
             <XAxis type="number" hide />
@@ -165,7 +165,7 @@ export default function ExposureChart() {
             tickLine={false}
             axisLine={false}
             tickMargin={10}
-            width={100}
+            width={120}
             tickFormatter={(value) => value.slice(0, 15) + (value.length > 15 ? '...' : '')}
             />
             <Tooltip
@@ -176,6 +176,6 @@ export default function ExposureChart() {
             <Bar dataKey="views" radius={4} fill="var(--color-views)" barSize={20} />
         </BarChart>
       </ResponsiveContainer>
-    </ChartContainer>
+    </div>
   );
 }

@@ -45,6 +45,10 @@ interface Device {
     playlistId: string;
 }
 
+interface AppSettings {
+    enableAnalytics: boolean;
+}
+
 const getPlaylistByDeviceId = (deviceId: string, allData: { mediaItems: MediaItem[], playlists: { id: string, name: string, items: PlaylistItemData[] }[], devices: Device[] }): Playlist | null => {
     const device = allData.devices.find(d => d.id === deviceId);
     if (!device || !device.playlistId) return null;
@@ -153,10 +157,11 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [current, setCurrent] = React.useState(0)
   const [playlist, setPlaylist] = React.useState<Playlist | null>(null);
+  const [appSettings, setAppSettings] = React.useState<AppSettings>({ enableAnalytics: true });
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
-    if (deviceId) {
+    if (deviceId && appSettings.enableAnalytics) {
         updateAnalytics();
         const hourlyTimer = setInterval(() => {
              updateAnalytics();
@@ -164,7 +169,7 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
       
         return () => clearInterval(hourlyTimer);
     }
-  }, [deviceId]);
+  }, [deviceId, appSettings.enableAnalytics]);
 
   React.useEffect(() => {
     const fetchAndSetPlaylist = async () => {
@@ -179,7 +184,9 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
         const allData = await res.json();
         const foundPlaylist = getPlaylistByDeviceId(deviceId, allData);
         setPlaylist(foundPlaylist);
-        if (foundPlaylist && foundPlaylist.items.length > 0) {
+        setAppSettings(allData.settings || { enableAnalytics: true });
+        
+        if (allData.settings?.enableAnalytics && foundPlaylist && foundPlaylist.items.length > 0) {
             trackExposure({ mediaId: foundPlaylist.items[0].id });
         }
       } catch (error) {
@@ -203,7 +210,9 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
       const newIndex = api.selectedScrollSnap();
       setCurrent(newIndex);
       // Rastreia a exposição de cada item individualmente na troca.
-      trackExposure({ mediaId: playlist.items[newIndex].id });
+      if (appSettings.enableAnalytics) {
+        trackExposure({ mediaId: playlist.items[newIndex].id });
+      }
     }
     
     api.on("select", onSelect)
@@ -221,7 +230,7 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
         api.off("select", onSelect)
       }
     }
-  }, [api, current, playlist])
+  }, [api, current, playlist, appSettings.enableAnalytics])
 
   if (isLoading) {
     return (

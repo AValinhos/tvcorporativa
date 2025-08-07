@@ -13,18 +13,13 @@ async function readData() {
     const fileContent = await fs.readFile(dataFilePath, 'utf-8');
     const data = JSON.parse(fileContent);
     // Initialize parts of the data if they don't exist
-    if (!data.devices) {
-      data.devices = [];
-    }
-    if (!data.playlists) {
-      data.playlists = [];
-    }
-     if (!data.mediaItems) {
-      data.mediaItems = [];
-    }
-     if (!data.users) {
-      data.users = [];
-    }
+    if (!data.devices) data.devices = [];
+    if (!data.playlists) data.playlists = [];
+    if (!data.mediaItems) data.mediaItems = [];
+    if (!data.users) data.users = [];
+    if (!data.settings) data.settings = { enableAnalytics: true };
+    if (data.settings.enableAnalytics === undefined) data.settings.enableAnalytics = true;
+    
     data.playlists.forEach((p: any) => {
         if (!p.deviceIds) {
             p.deviceIds = [];
@@ -34,13 +29,19 @@ async function readData() {
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       // If file doesn't exist, create it with a default structure
-      const defaultData = { users: [{user: "admin", password: "password"}], mediaItems: [], playlists: [], devices: [] };
+      const defaultData = { 
+          users: [{user: "admin", password: "password"}], 
+          mediaItems: [], 
+          playlists: [], 
+          devices: [],
+          settings: { enableAnalytics: true } 
+      };
       await writeData(defaultData);
       return defaultData;
     }
     console.error('Error reading data file:', error);
     // Return a default structure in case of other errors
-    return { users: [], mediaItems: [], playlists: [], devices: [] };
+    return { users: [], mediaItems: [], playlists: [], devices: [], settings: { enableAnalytics: true } };
   }
 }
 
@@ -96,9 +97,12 @@ export async function POST(req: NextRequest) {
         await fs.writeFile(exposureFilePath, '{}', 'utf-8');
         return NextResponse.json({ message: 'Dados de visualização limpos com sucesso.' }, { status: 200 });
     }
-
+     // --- Settings Actions ---
+    if (body.action === 'UPDATE_SETTINGS') {
+        data.settings = { ...data.settings, ...body.payload };
+    }
     // --- User Actions ---
-    if (body.action === 'CREATE_USER') {
+    else if (body.action === 'CREATE_USER') {
         const { user, password } = body.payload;
         if (data.users.find((u: any) => u.user === user)) {
              return NextResponse.json({ message: 'Usuário já existe.' }, { status: 409 });
@@ -212,7 +216,7 @@ export async function POST(req: NextRequest) {
 
     await writeData(data);
     
-    if (analyticsShouldUpdate) {
+    if (analyticsShouldUpdate && data.settings.enableAnalytics) {
         await updateAnalytics(req);
     }
 

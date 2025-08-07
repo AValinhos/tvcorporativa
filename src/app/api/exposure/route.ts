@@ -4,6 +4,18 @@ import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 
 const exposureFilePath = path.join(process.cwd(), 'src', 'lib', 'exposure.json');
+const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'data.json');
+
+
+async function readDataFile() {
+    try {
+        const fileContent = await fs.readFile(dataFilePath, 'utf-8');
+        return JSON.parse(fileContent);
+    } catch (error) {
+        console.error('Error reading data file:', error);
+        return { settings: { enableAnalytics: true } };
+    }
+}
 
 async function readExposureData(): Promise<{ [key: string]: number }> {
   try {
@@ -29,6 +41,11 @@ async function writeExposureData(data: { [key: string]: number }) {
 
 export async function POST(req: NextRequest) {
   try {
+    const data = await readDataFile();
+    if (!data.settings?.enableAnalytics) {
+      return NextResponse.json({ message: 'A coleta de exposição está desabilitada.' }, { status: 200 });
+    }
+
     const body = await req.json();
     const { mediaId } = body;
     const exposureData = await readExposureData();
