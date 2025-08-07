@@ -230,5 +230,8 @@
       "playlistId": "2",
       "id": "2"
     }
-  ]
+  ],
+  "settings": {
+    "enableAnalytics": false
+  }
 }
