@@ -154,7 +154,7 @@
       "name": "iframe 01",
       "date": "2025-08-07",
       "type": "Iframe",
-      "src": "https://app.powerbi.com/view?r=eyJrIjoiMDdiN2QxYjQtYjliOC00N2IzLTg3ZjMtYmZhODk4ZmE0NjljIiwidCI6ImVkYmFiOThiLWU4ZmUtNDdlMi1iOTgyLWUzNDUwMTMyYmY0YyJ9",
+      "src": "<iframe title=\"Ordens de Serviço\" width=\"600\" height=\"373.5\" src=\"https://app.powerbi.com/view?r=eyJrIjoiMDdiN2QxYjQtYjliOC00N2IzLTg3ZjMtYmZhODk4ZmE0NjljIiwidCI6ImVkYmFiOThiLWU4ZmUtNDdlMi1iOTgyLWUzNDUwMTMyYmY0YyJ9\" frameborder=\"0\" allowFullScreen=\"true\"></iframe>",
       "content": "",
       "subContent": "",
       "bgColor": "#228B22",

@@ -42,7 +42,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileUp, Loader2, Edit, Trash2, Link, Upload } from 'lucide-react';
+import { MoreHorizontal, FileUp, Loader2, Edit, Trash2, Link, Upload, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -63,16 +63,23 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
   const [isProcessing, setIsProcessing] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   
+  // State for edited fields
   const [editedName, setEditedName] = useState('');
   const [editedSrc, setEditedSrc] = useState('');
   const [editedContent, setEditedContent] = useState('');
   const [editedSubContent, setEditedSubContent] = useState('');
   const [editedBgColor, setEditedBgColor] = useState('#228B22');
+
+  // Footer state
   const [showFooter, setShowFooter] = useState(false);
   const [footerText1, setFooterText1] = useState('');
   const [footerText2, setFooterText2] = useState('');
   const [footerBgColor, setFooterBgColor] = useState('#dc2626');
   const [footerImageSrc, setFooterImageSrc] = useState('');
+
+  // Iframe specific state
+  const [iframeNoReload, setIframeNoReload] = useState(false);
+  const [iframeReloadInterval, setIframeReloadInterval] = useState(0);
 
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -137,15 +144,21 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
   const handleEditClick = (item: MediaItem) => {
     setEditingItem(item);
     setEditedName(item.name);
+    // General fields
     setEditedSrc(item.src || '');
     setEditedContent(item.content || '');
     setEditedSubContent(item.subContent || '');
     setEditedBgColor(item.bgColor || '#228B22');
+    // Footer fields
     setShowFooter(item.showFooter || false);
     setFooterText1(item.footerText1 || '');
     setFooterText2(item.footerText2 || '');
     setFooterBgColor(item.footerBgColor || '#dc2626');
     setFooterImageSrc(item.footerImageSrc || '');
+    // Iframe fields
+    setIframeNoReload(item.iframeNoReload || false);
+    setIframeReloadInterval(item.iframeReloadInterval || 0);
+
     setIsEditDialogOpen(true);
   };
 
@@ -167,6 +180,8 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
         footerText2: footerText2,
         footerBgColor: footerBgColor,
         footerImageSrc: footerImageSrc,
+        iframeNoReload: iframeNoReload,
+        iframeReloadInterval: Number(iframeReloadInterval) || 0,
     };
 
     try {
@@ -412,11 +427,29 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
                     </div>
                   </>
                 ) : (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="src" className="text-right">URL/Origem</Label>
+                    <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="src" className="text-right pt-2">URL/Origem</Label>
                         <Textarea id="src" value={editedSrc} onChange={(e) => setEditedSrc(e.target.value)} className="col-span-3" />
                     </div>
                 )}
+                
+                {editingItem?.type === 'Iframe' && (
+                  <>
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <Label>Não recarregar a cada ciclo</Label>
+                            <DialogDescription>Ideal para dashboards ou conteúdo estático.</DialogDescription>
+                        </div>
+                        <Switch checked={iframeNoReload} onCheckedChange={setIframeNoReload} />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4 pt-2">
+                        <Label htmlFor="iframe-reload" className="text-right col-span-2">Intervalo de atualização (minutos)</Label>
+                        <Input id="iframe-reload" type="number" value={iframeReloadInterval || ''} onChange={(e) => setIframeReloadInterval(parseInt(e.target.value))} className="col-span-2" placeholder="0 para desativar"/>
+                    </div>
+                  </>
+                )}
+
 
                 <Separator className="my-4" />
 

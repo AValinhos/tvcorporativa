@@ -29,6 +29,8 @@ interface MediaItem {
   footerText2?: string;
   footerBgColor?: string;
   footerImageSrc?: string;
+  iframeNoReload?: boolean;
+  iframeReloadInterval?: number;
 }
 
 interface PlaylistItemData {
@@ -176,6 +178,40 @@ const FooterImage: React.FC<{ src: string }> = ({ src }) => {
     );
 };
 
+const IframeRenderer: React.FC<{ item: MediaItem, isVisible: boolean }> = ({ item, isVisible }) => {
+    const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+    React.useEffect(() => {
+        let interval: NodeJS.Timeout | null = null;
+        if (isVisible && item.iframeReloadInterval && item.iframeReloadInterval > 0) {
+            interval = setInterval(() => {
+                if (iframeRef.current) {
+                    iframeRef.current.src = iframeRef.current.src; // Reload iframe
+                }
+            }, item.iframeReloadInterval * 60 * 1000);
+        }
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+        };
+    }, [isVisible, item.iframeReloadInterval]);
+
+    const src = extractSrcFromIframe(item.src!);
+
+    return (
+        <iframe
+            ref={iframeRef}
+            src={src}
+            // Use a dynamic key to force re-render only when `iframeNoReload` is false
+            key={item.iframeNoReload ? item.id : `${item.id}-${isVisible}`}
+            className="w-full h-full border-0"
+            allowFullScreen
+            allow="autoplay; encrypted-media; picture-in-picture"
+        />
+    );
+};
+
 
 export default function DisplayClient({ deviceId }: { deviceId: string }) {
   const [api, setApi] = React.useState<CarouselApi>()
@@ -319,13 +355,7 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
                   />
                 )}
                 {item.type === 'Iframe' && (
-                  <iframe
-                    src={extractSrcFromIframe(item.src!)}
-                    className="w-full h-full border-0"
-                    allowFullScreen
-                    allow="autoplay; encrypted-media; picture-in-picture"
-                    key={`${item.id}-${current === index}`}
-                  />
+                  <IframeRenderer item={item} isVisible={current === index} />
                 )}
                 {item.type === 'Text' && (
                    <div 

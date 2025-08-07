@@ -27,6 +27,9 @@ export interface MediaItem {
   footerText2?: string;
   footerBgColor?: string;
   footerImageSrc?: string;
+  // Iframe specific
+  iframeNoReload?: boolean;
+  iframeReloadInterval?: number;
 }
 
 export interface PlaylistItemData {
@@ -39,6 +42,7 @@ export interface Playlist {
   name: string;
   items: PlaylistItemData[];
   deviceIds: string[];
+  transition?: 'slide' | 'fade';
 }
 
 export interface Device {
