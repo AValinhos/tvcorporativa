@@ -162,7 +162,9 @@
       "footerText1": "",
       "footerText2": "",
       "footerBgColor": "#dc2626",
-      "footerImageSrc": ""
+      "footerImageSrc": "",
+      "iframeNoReload": true,
+      "iframeReloadInterval": 10
     }
   ],
   "playlists": [

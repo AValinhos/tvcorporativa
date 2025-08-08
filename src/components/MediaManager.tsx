@@ -87,6 +87,9 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const filteredItems = useMemo(() => {
     return mediaItems.filter(item => {
@@ -98,9 +101,19 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
         return true;
     });
   }, [mediaItems, filterType]);
+  
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredItems.slice(startIndex, endIndex);
+  }, [currentPage, filteredItems]);
+
 
   useEffect(() => {
     setSelectedItems([]);
+    setCurrentPage(1);
   }, [filterType, mediaItems]);
   
   const handleDelete = async (itemId: string) => {
@@ -226,7 +239,7 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
   
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-        setSelectedItems(filteredItems.map(item => item.id));
+        setSelectedItems(paginatedItems.map(item => item.id));
     } else {
         setSelectedItems([]);
     }
@@ -295,10 +308,10 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
               <TableRow>
                 <TableHead>
                     <Checkbox
-                        checked={selectedItems.length > 0 && selectedItems.length === filteredItems.length && filteredItems.length > 0}
+                        checked={selectedItems.length > 0 && selectedItems.length === paginatedItems.length && paginatedItems.length > 0}
                         onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
                         aria-label="Selecionar todos"
-                        disabled={filteredItems.length === 0}
+                        disabled={paginatedItems.length === 0}
                     />
                 </TableHead>
                 <TableHead>Nome</TableHead>
@@ -310,7 +323,7 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <TableRow key={item.id} data-state={selectedItems.includes(item.id) && "selected"}>
                    <TableCell>
                         <Checkbox
@@ -375,8 +388,32 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">
-          Mostrando <strong>1-{filteredItems.length}</strong> de <strong>{mediaItems.length}</strong> itens
+           <strong>{selectedItems.length}</strong> de{" "}
+           <strong>{filteredItems.length}</strong> item(s) selecionado(s).
         </div>
+        {totalPages > 1 && (
+            <div className="flex items-center space-x-2 ml-auto">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                >
+                    Anterior
+                </Button>
+                 <span className="text-xs text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                >
+                    Próxima
+                </Button>
+            </div>
+        )}
       </CardFooter>
     </Card>
 
