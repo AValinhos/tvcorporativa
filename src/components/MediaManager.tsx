@@ -42,7 +42,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileUp, Loader2, Edit, Trash2, Link, Upload, RefreshCw, Search } from 'lucide-react';
+import { MoreHorizontal, FileUp, Loader2, Edit, Trash2, Link, Upload, RefreshCw, Search, ArrowUpDown } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -60,6 +60,10 @@ interface MediaManagerProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
+
+type SortKey = 'name' | 'type' | 'date';
+type SortDirection = 'asc' | 'desc';
+
 
 export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, searchQuery, setSearchQuery }: MediaManagerProps) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -91,10 +95,36 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
   const { toast } = useToast();
   
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortKey, setSortKey] = useState<SortKey>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const ITEMS_PER_PAGE = 10;
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+  
+  const sortedItems = useMemo(() => {
+    return [...mediaItems].sort((a, b) => {
+      const aValue = a[sortKey];
+      const bValue = b[sortKey];
+
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [mediaItems, sortKey, sortDirection]);
+
   const filteredItems = useMemo(() => {
-    return mediaItems.filter(item => {
+    return sortedItems.filter(item => {
         if (filterType === 'all') return true;
         if (filterType === 'image') return item.type.startsWith('image/');
         if (filterType === 'video') return item.type.startsWith('video/');
@@ -102,7 +132,7 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
         if (filterType === 'text') return item.type === 'Text';
         return true;
     });
-  }, [mediaItems, filterType]);
+  }, [sortedItems, filterType]);
   
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
 
@@ -328,9 +358,24 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
                         disabled={paginatedItems.length === 0}
                     />
                 </TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Data Adicionada</TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => handleSort('name')}>
+                        Nome
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => handleSort('type')}>
+                        Tipo
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </TableHead>
+                <TableHead>
+                    <Button variant="ghost" onClick={() => handleSort('date')}>
+                        Data Adicionada
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                </TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
