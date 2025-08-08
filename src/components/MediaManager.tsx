@@ -42,7 +42,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileUp, Loader2, Edit, Trash2, Link, Upload, RefreshCw } from 'lucide-react';
+import { MoreHorizontal, FileUp, Loader2, Edit, Trash2, Link, Upload, RefreshCw, Search } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -57,9 +57,11 @@ interface MediaManagerProps {
   mediaItems: MediaItem[];
   onMediaUpdate: () => void;
   isLoading: boolean;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
-export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: MediaManagerProps) {
+export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, searchQuery, setSearchQuery }: MediaManagerProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   
@@ -264,6 +266,18 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading }: M
                 <CardDescription>Gerencie seu conteúdo enviado.</CardDescription>
             </div>
             <div className='flex items-center gap-2 flex-wrap'>
+                <form className="flex-1 sm:flex-initial" onSubmit={(e) => e.preventDefault()}>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Buscar conteúdo ou playlists..."
+                      className="pl-8 sm:w-[200px] md:w-[200px] lg:w-[300px]"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </form>
                 {selectedItems.length > 0 && (
                      <Button 
                         size="sm" 
