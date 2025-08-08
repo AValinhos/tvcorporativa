@@ -92,6 +92,7 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
   const [filterType, setFilterType] = useState('all');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const { toast } = useToast();
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,14 +126,17 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
 
   const filteredItems = useMemo(() => {
     return sortedItems.filter(item => {
-        if (filterType === 'all') return true;
-        if (filterType === 'image') return item.type.startsWith('image/');
-        if (filterType === 'video') return item.type.startsWith('video/');
-        if (filterType === 'iframe') return item.type === 'Iframe';
-        if (filterType === 'text') return item.type === 'Text';
-        return true;
+        const query = searchQuery.toLowerCase();
+        const nameMatch = item.name.toLowerCase().includes(query);
+
+        if (filterType === 'all') return nameMatch;
+        if (filterType === 'image') return item.type.startsWith('image/') && nameMatch;
+        if (filterType === 'video') return item.type.startsWith('video/') && nameMatch;
+        if (filterType === 'iframe') return item.type === 'Iframe' && nameMatch;
+        if (filterType === 'text') return item.type === 'Text' && nameMatch;
+        return nameMatch;
     });
-  }, [sortedItems, filterType]);
+  }, [sortedItems, filterType, searchQuery]);
   
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
 
@@ -142,11 +146,14 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
     return filteredItems.slice(startIndex, endIndex);
   }, [currentPage, filteredItems]);
 
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
 
   useEffect(() => {
     setSelectedItems([]);
     setCurrentPage(1);
-  }, [filterType, mediaItems]);
+  }, [filterType, mediaItems, searchQuery]);
   
   const handleDelete = async (itemId: string) => {
     setIsProcessing(true);
@@ -285,6 +292,11 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
     }
   };
 
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSearchQuery(localSearchQuery);
+  };
+
 
   return (
     <>
@@ -296,15 +308,15 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
                 <CardDescription>Gerencie seu conteúdo enviado.</CardDescription>
             </div>
             <div className='flex items-center gap-2 flex-wrap'>
-                <form className="flex-1 sm:flex-initial" onSubmit={(e) => e.preventDefault()}>
+                <form className="flex-1 sm:flex-initial" onSubmit={handleSearchSubmit}>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="search"
-                      placeholder="Buscar conteúdo ou playlists..."
+                      placeholder="Buscar conteúdo..."
                       className="pl-8 sm:w-[200px] md:w-[200px] lg:w-[300px]"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      value={localSearchQuery}
+                      onChange={(e) => setLocalSearchQuery(e.target.value)}
                     />
                   </div>
                 </form>

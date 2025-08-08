@@ -9,10 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { CircleUser, Menu, Tv, Search } from 'lucide-react'
+import { CircleUser, Menu, Tv } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from './AuthProvider';
@@ -26,13 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-
-interface HeaderProps {
-    searchQuery?: string;
-    setSearchQuery?: (query: string) => void;
-}
-
-export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
+export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
