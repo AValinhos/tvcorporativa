@@ -310,14 +310,17 @@ export default function MediaManager({ mediaItems, onMediaUpdate, isLoading, sea
             <div className='flex items-center gap-2 flex-wrap'>
                 <form className="flex-1 sm:flex-initial" onSubmit={handleSearchSubmit}>
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="search"
                       placeholder="Buscar conteúdo..."
-                      className="pl-8 sm:w-[200px] md:w-[200px] lg:w-[300px]"
+                      className="pr-10 sm:w-[200px] md:w-[200px] lg:w-[300px]"
                       value={localSearchQuery}
                       onChange={(e) => setLocalSearchQuery(e.target.value)}
                     />
+                    <Button type="submit" size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
+                        <Search className="h-4 w-4 text-muted-foreground" />
+                        <span className="sr-only">Buscar</span>
+                    </Button>
                   </div>
                 </form>
                 {selectedItems.length > 0 && (
