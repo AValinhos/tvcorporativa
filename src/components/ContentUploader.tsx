@@ -18,6 +18,16 @@ interface ContentUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
   onContentSaved: () => void;
 }
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
+
 export default function ContentUploader({ onContentSaved, className }: ContentUploaderProps) {
   const [activeTab, setActiveTab] = useState<ContentType>('image_video');
   const [contentName, setContentName] = useState('');
@@ -70,7 +80,7 @@ export default function ContentUploader({ onContentSaved, className }: ContentUp
             return;
           }
           newMediaItem.type = file.type;
-          newMediaItem.src = URL.createObjectURL(file); 
+          newMediaItem.src = await fileToBase64(file);
           newMediaItem.dataAiHint = "user uploaded";
           break;
         case 'iframe':

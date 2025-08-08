@@ -165,6 +165,14 @@
       "footerImageSrc": "",
       "iframeNoReload": true,
       "iframeReloadInterval": 10
+    },
+    {
+      "id": "1754676864390",
+      "name": "teste video",
+      "date": "2025-08-08",
+      "type": "video/mp4",
+      "src": "blob:https://6000-firebase-studio-1753700829316.cluster-ve345ymguzcd6qqzuko2qbxtfe.cloudworkstations.dev/0e8eddc4-9156-4968-ab49-166ae1bd9734",
+      "dataAiHint": "user uploaded"
     }
   ],
   "playlists": [
@@ -243,11 +251,7 @@
       "name": "teste iframe",
       "items": [
         {
-          "mediaId": "1754573516105",
-          "duration": 10
-        },
-        {
-          "mediaId": "1753820733211",
+          "mediaId": "1754676864390",
           "duration": 10
         }
       ],
@@ -276,6 +280,6 @@
     }
   ],
   "settings": {
-    "enableAnalytics": true
+    "enableAnalytics": false
   }
 }
