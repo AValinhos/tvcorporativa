@@ -345,13 +345,13 @@ export default function DisplayClient({ deviceId }: { deviceId: string }) {
                 )}
                 {item.type.startsWith('video/') && (
                   <video
+                    key={current === index ? item.id : undefined}
                     src={item.src!}
                     className="w-full h-full object-contain"
                     autoPlay
                     muted
                     loop={playlist.items.length === 1}
                     playsInline
-                    key={current === index ? item.src : undefined}
                   />
                 )}
                 {item.type === 'Iframe' && (
